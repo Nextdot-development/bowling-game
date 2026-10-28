@@ -358,9 +358,13 @@ export function fallDirection(n: PinNumber, pathX = 0): { x: number; z: number }
 const WALL_X = LANE_HALF_WIDTH + GUTTER_WIDTH - PIN_MAX_RADIUS;
 
 /** A half-knocked pin's first lean (radians) and how fast its rocking dies away. */
-const ROCK_ANGLE = 0.44;
-const ROCK_DECAY = 3.2;
-const ROCK_HZ = 2.1;
+const ROCK_ANGLE = 0.56;
+const ROCK_DECAY = 1.7;
+const ROCK_HZ = 3;
+/** How far the base shuffles on the deck while it rocks (metres). */
+const ROCK_SHUFFLE = PIN_MAX_RADIUS * 0.35;
+/** The rocking ends exactly by then (seconds after the hit), upright and back on its spot. */
+const ROCK_SECONDS = 2.6;
 
 export function pinPose(n: PinNumber, falls: boolean, elapsedMs: number, wobbles = false, pathX = 0, strike = false): PinPose {
   const u = elapsedMs / 1000 - pinReactionStart(n, pathX, strike);
@@ -371,9 +375,15 @@ export function pinPose(n: PinNumber, falls: boolean, elapsedMs: number, wobbles
     // Tip toward the fall direction, rock back past upright, and settle.
     // The swings shrink to nothing well before the result is shown.
     const dir = fallDirection(n, pathX);
-    const angle = Number.isFinite(u) ? ROCK_ANGLE * Math.exp(-ROCK_DECAY * u) * Math.sin(2 * Math.PI * ROCK_HZ * u) : 0;
+    if (!(u < ROCK_SECONDS)) return { ...rest, dim: 1 };
+    const fade = Math.exp(-ROCK_DECAY * u) * (1 - u / ROCK_SECONDS);
+    const angle = ROCK_ANGLE * fade * Math.sin(2 * Math.PI * ROCK_HZ * u);
+    // The base chatters on the deck as it rocks, back and forth along the hit.
+    const shuffle = ROCK_SHUFFLE * fade * Math.sin(2 * Math.PI * ROCK_HZ * 2 * u);
     return {
       ...rest,
+      dx: dir.x * shuffle,
+      dz: dir.z * shuffle,
       // Rocks on the edge of its base, so it lifts a little as it leans.
       lift: PIN_MAX_RADIUS * 0.6 * Math.abs(Math.sin(angle)),
       axisX: dir.z,

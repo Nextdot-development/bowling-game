@@ -23,7 +23,7 @@ const button = (name: RegExp) => screen.getByRole("button", { name });
 const wait = (ms: number) => act(() => vi.advanceTimersByTime(ms + 10));
 
 describe("sounds", () => {
-  it.each([/^Amoxi-Clav \+ Azithromycin$/, /^Amoxi-Clav \+ Clarithromycin$/])("a soft wah after the first throw, the chime for the strike (%s)", (therapy) => {
+  it.each([/^Amoxiclav \+ Azithromycin$/, /^Amoxiclav \+ Clarithromycin$/])("a soft wah after the first throw, the chime for the strike (%s)", (therapy) => {
     render(<GameShell />);
     fireEvent.click(button(/start game/i));
     fireEvent.change(screen.getByPlaceholderText("Enter your name"), { target: { value: "Asha" } });

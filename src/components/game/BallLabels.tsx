@@ -73,24 +73,24 @@ export function RackLabels({ balls, width, height, onSelect }: { balls: readonly
         );
       })}
       {list && (
-        <div
-          className="solid-panel pointer-events-auto absolute -translate-y-1/2 rounded-2xl p-2.5 shadow-lift ring-2 ring-brand-gold kiosk:p-[0.75rem]"
-          style={{ left: right, top: middle }}
-        >
-          <p className="eyebrow px-1.5 pb-1.5 text-brand-gold kiosk:pb-[0.5rem] kiosk:text-[0.95rem]">Choose your ball</p>
-          <div className="flex flex-col gap-1.5 kiosk:gap-[0.5rem]">
-            {spots.map(({ id }) => (
-              <button
-                key={id}
-                type="button"
-                tabIndex={-1}
-                onClick={() => onSelect(id)}
-                className="flex items-center gap-2.5 whitespace-nowrap rounded-xl bg-white/10 px-3 py-2 text-left font-display text-sm font-bold text-white transition-colors hover:bg-white/20 active:scale-[0.98] kiosk:gap-[0.7rem] kiosk:px-[0.9rem] kiosk:py-[0.6rem] kiosk:text-[1.1rem]"
-              >
-                <span className="h-4 w-4 shrink-0 rounded-full ring-2 ring-white/70 kiosk:h-[1.1rem] kiosk:w-[1.1rem]" style={{ background: BALL_COLORS[id] }} />
-                {DRUGS[id].name}
-              </button>
-            ))}
+        // Centred on the balls by layout, not a transform, so the text lands on whole pixels and stays sharp.
+        <div className="absolute flex h-0 items-center" style={{ left: Math.round(right), top: Math.round(middle) }}>
+          <div className="solid-panel pointer-events-auto rounded-2xl p-2.5 shadow-lift ring-2 ring-brand-gold kiosk:p-[0.75rem]">
+            <p className="eyebrow px-1.5 pb-1.5 text-brand-gold kiosk:pb-[0.5rem] kiosk:text-[0.95rem]">Choose your ball</p>
+            <div className="flex flex-col gap-2 kiosk:gap-[0.6rem]">
+              {spots.map(({ id }) => (
+                <button
+                  key={id}
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => onSelect(id)}
+                  className="flex items-center gap-2.5 whitespace-nowrap rounded-xl bg-white px-3.5 py-2.5 text-left text-base font-bold text-brand-navy shadow-md transition-colors hover:bg-brand-gold active:scale-[0.98] kiosk:gap-[0.75rem] kiosk:px-[1rem] kiosk:py-[0.7rem] kiosk:text-[1.25rem]"
+                >
+                  <span className="h-4 w-4 shrink-0 rounded-full ring-2 ring-brand-navy/30 kiosk:h-[1.2rem] kiosk:w-[1.2rem]" style={{ background: BALL_COLORS[id] }} />
+                  {DRUGS[id].name}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}

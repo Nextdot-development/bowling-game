@@ -18,8 +18,8 @@ const click = (el: HTMLElement) => fireEvent.click(el);
 const button = (name: RegExp) => screen.getByRole("button", { name });
 const wait = (ms: number) => act(() => vi.advanceTimersByTime(ms + 10));
 
-const AZI = /^Amoxi-Clav \+ Azithromycin$/;
-const CLARI = /^Amoxi-Clav \+ Clarithromycin$/;
+const AZI = /^Amoxiclav \+ Azithromycin$/;
+const CLARI = /^Amoxiclav \+ Clarithromycin$/;
 
 /** Closes the greeting pop-up, then taps the therapy's ball on the lane. */
 function chooseTherapy(therapy: RegExp) {
@@ -98,9 +98,9 @@ describe("GameShell", () => {
 
   it("welcome screen shows the title, subtitle and tagline", () => {
     render(<GameShell />);
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/CABP\s*Challenge/);
-    expect(screen.getByText("Conventional Therapy vs Novel Therapy")).toBeInTheDocument();
-    expect(screen.getByText(/Knock down the barriers/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/CABP\s*Bowling\s*Challenge/);
+    expect(screen.getByText("Roll the ball")).toBeInTheDocument();
+    expect(screen.getByText("Break the barriers")).toBeInTheDocument();
   });
 
   it("requires a name, then greets the doctor by it (as text) with exactly two therapies", () => {
@@ -132,8 +132,8 @@ describe("GameShell", () => {
     click(button(/^Choose your therapy/));
     const rack = screen.getByRole("region", { name: "Choose your therapy" });
     expect(within(rack).getAllByRole("button").map((b) => b.getAttribute("aria-label")?.split(",")[0])).toEqual([
-      "Amoxi-Clav + Azithromycin",
-      "Amoxi-Clav + Clarithromycin",
+      "Amoxiclav + Azithromycin",
+      "Amoxiclav + Clarithromycin",
     ]);
     expect(button(/^Roll the ball/)).toBeDisabled(); // no throw before a therapy is chosen
   });
@@ -165,7 +165,7 @@ describe("GameShell", () => {
     startBowling(AZI);
     expect(screen.queryByText("Frame 1 of 2")).not.toBeInTheDocument(); // no frame badge
     const rack = screen.getByRole("region", { name: "Your therapy" });
-    expect(within(rack).getByRole("button", { name: /^Amoxi-Clav \+ Azithromycin/ })).toBeDisabled(); // locked
+    expect(within(rack).getByRole("button", { name: /^Amoxiclav \+ Azithromycin/ })).toBeDisabled(); // locked
     throwFromLane();
     wait(ROLL_TOTAL_MS);
     const r = screen.getByRole("dialog", { name: "Good attempt!" });
@@ -185,7 +185,7 @@ describe("GameShell", () => {
     expect(screen.getByRole("status")).not.toHaveTextContent(/rolling/);
     expect(button(/^Roll the ball/)).toBeEnabled();
     throwFromLane();
-    expect(screen.getByRole("status")).toHaveTextContent("Frame 1, second throw: rolling Amoxi-Clav + Azithromycin.");
+    expect(screen.getByRole("status")).toHaveTextContent("Frame 1, second throw: rolling Amoxiclav + Azithromycin.");
     wait(ROLL_TOTAL_MS);
     expect(laneTags()).toEqual([]); // tags step aside while the rack is reset
     const t = screen.getByRole("region", { name: "Good Try" });
@@ -248,7 +248,7 @@ describe("GameShell", () => {
     const card = screen.getByRole("dialog", { name: "CABP Challenge Results" });
     expect(card).toHaveTextContent("Dr. Asha Rao");
     const rows = within(within(card).getByRole("table")).getAllByRole("row").map((r) => r.textContent);
-    expect(rows[1]).toMatch(/^Amoxi-Clav \+ Azithromycin.*6\/10/);
+    expect(rows[1]).toMatch(/^Amoxiclav \+ Azithromycin.*6\/10/);
     expect(rows[2]).toMatch(/^Nafithromycin.*10\/10/);
     expect(card).not.toHaveTextContent(/Frame [12]/);
     const why = within(card).getByRole("region", { name: "Why Nafithromycin Changes the Game" });
@@ -302,7 +302,7 @@ describe("GameShell", () => {
     mediaState.reducedMotion = true;
     startBowling(CLARI);
     throwFromLane();
-    expect(screen.getByRole("status")).toHaveTextContent("Frame 1, Amoxi-Clav + Clarithromycin: 5 of 10 pins down.");
+    expect(screen.getByRole("status")).toHaveTextContent("Frame 1, Amoxiclav + Clarithromycin: 5 of 10 pins down.");
     click(button(/^2nd attempt/i));
     throwFromLane();
     wait(0);
@@ -331,10 +331,10 @@ describe("GameShell", () => {
     await user.keyboard("{Enter}");
     await user.keyboard("Asha{Enter}");
     await user.click(screen.getByRole("button", { name: /^Choose your therapy/ }));
-    await user.click(screen.getByRole("button", { name: /^Amoxi-Clav \+ Clarithromycin/ }));
+    await user.click(screen.getByRole("button", { name: /^Amoxiclav \+ Clarithromycin/ }));
     screen.getByRole("button", { name: /^Roll the ball/ }).focus();
     await user.keyboard("{Enter}");
-    expect(screen.getByRole("status")).toHaveTextContent("Frame 1, Amoxi-Clav + Clarithromycin: 5 of 10 pins down.");
+    expect(screen.getByRole("status")).toHaveTextContent("Frame 1, Amoxiclav + Clarithromycin: 5 of 10 pins down.");
   });
 
   it("pin card closes on Escape", async () => {

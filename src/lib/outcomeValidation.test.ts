@@ -67,7 +67,7 @@ describe("outcome matrix", () => {
 
 describe("configuration", () => {
   it("offers exactly the two conventional combinations, and presents MIQNAF® for Frame 2", () => {
-    expect(CONVENTIONAL_BALLS.map((d) => DRUGS[d].name)).toEqual(["Amoxi-Clav + Azithromycin", "Amoxi-Clav + Clarithromycin"]);
+    expect(CONVENTIONAL_BALLS.map((d) => DRUGS[d].name)).toEqual(["Amoxiclav + Azithromycin", "Amoxiclav + Clarithromycin"]);
     expect(NOVEL_BALL).toBe("miqnaf");
     expect(DRUGS.miqnaf).toMatchObject({ name: "Nafithromycin" });
     expect(ALL).toEqual(Object.keys(DRUGS));
@@ -92,7 +92,7 @@ describe("configuration", () => {
   it("keeps the supplied closing copy and both footer texts verbatim", () => {
     expect(CLOSING_COPY.lines).toEqual([
       "Thank you for participating in the CABP Challenge!",
-      "Nafithromycin lactone-Ketolide designed to overcome resistance in CABP Pathogens",
+      "Nafithromycin (MIQNAF®) lactone-Ketolide designed to overcome resistance in CABP Pathogens",
     ]);
     expect(DISCLAIMER).toBe(
       "Disclaimer: This material is intended for scientific and educational purposes only. Views expressed by healthcare professionals are based on their individual clinical experience and are not intended as medical advice or endorsement of any brand or company.",

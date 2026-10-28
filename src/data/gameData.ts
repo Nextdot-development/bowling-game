@@ -1,9 +1,9 @@
 
 import type { Drug, DrugId, Pin } from "@/types/game";
 
-export const GAME_TITLE = "CABP Challenge";
-export const GAME_SUBTITLE = "Conventional Therapy vs Novel Therapy";
-export const GAME_TAGLINE = "Knock down the barriers";
+export const GAME_TITLE = "CABP Bowling Challenge";
+export const GAME_SUBTITLE = "Roll the ball";
+export const GAME_TAGLINE = "Break the barriers";
 
 export const DISCLAIMER =
   "Disclaimer: This material is intended for scientific and educational purposes only. Views expressed by healthcare professionals are based on their individual clinical experience and are not intended as medical advice or endorsement of any brand or company.";
@@ -23,13 +23,13 @@ export const NOVEL_BALL: DrugId = "miqnaf";
 export const DRUGS: Readonly<Record<DrugId, Drug>> = {
   amoxiclavAzithro: {
     id: "amoxiclavAzithro",
-    name: "Amoxi-Clav + Azithromycin",
+    name: "Amoxiclav + Azithromycin",
     drugClass: "Conventional therapy",
     description: "Amoxicillin/clavulanate with azithromycin.",
   },
   amoxiclavClarithro: {
     id: "amoxiclavClarithro",
-    name: "Amoxi-Clav + Clarithromycin",
+    name: "Amoxiclav + Clarithromycin",
     drugClass: "Conventional therapy",
     description: "Amoxicillin/clavulanate with clarithromycin.",
   },
@@ -64,8 +64,8 @@ export const PINS: readonly Pin[] = [
 /**
  * Scores as supplied, configured explicitly (never calculated from the pins).
  * Client update of 2026-10-28: a point per pin down, plus half a point per
- * shaking pin after the second throw. Amoxi-Clav + Azithromycin: 4 down, then
- * 1 more with 2 shaking, so 4/10 then 6/10. Amoxi-Clav + Clarithromycin: 5 down,
+ * shaking pin after the second throw. Amoxiclav + Azithromycin: 4 down, then
+ * 1 more with 2 shaking, so 4/10 then 6/10. Amoxiclav + Clarithromycin: 5 down,
  * then 2 more, none shaking, so 5/10 then 7/10.
  */
 export const FIRST_THROW_SCORE: Readonly<Record<DrugId, number | null>> = {
@@ -134,7 +134,7 @@ export const CLOSING_COPY = {
   salutation: "Dear",
   lines: [
     "Thank you for participating in the CABP Challenge!",
-    "Nafithromycin lactone-Ketolide designed to overcome resistance in CABP Pathogens",
+    "Nafithromycin (MIQNAF®) lactone-Ketolide designed to overcome resistance in CABP Pathogens",
   ],
   /** Back to the welcome screen for the next doctor. */
   button: "New Game",

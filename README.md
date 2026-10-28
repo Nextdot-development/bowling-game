@@ -1,6 +1,6 @@
 # CABP Challenge: Conventional Therapy vs Novel Therapy
 
-An interactive game for scientific discussion among healthcare professionals at a medical conference: the CABP Challenge, Conventional Therapy vs Novel Therapy. On a 3D lane with ten treatment-barrier pins, the doctor enters their name, chooses a conventional combination (Amoxi-Clav + Azithromycin or Amoxi-Clav + Clarithromycin) and bowls Frame 1 (two throws, same ball); a fresh rack is set and MIQNAF® (nafithromycin) is presented automatically for Frame 2. Every pin state and score comes from fixed, supplied configuration.
+An interactive game for scientific discussion among healthcare professionals at a medical conference: the CABP Challenge, Conventional Therapy vs Novel Therapy. On a 3D lane with ten treatment-barrier pins, the doctor enters their name, chooses a conventional combination (Amoxiclav + Azithromycin or Amoxiclav + Clarithromycin) and bowls Frame 1 (two throws, same ball); a fresh rack is set and MIQNAF® (nafithromycin) is presented automatically for Frame 2. Every pin state and score comes from fixed, supplied configuration.
 
 > **Draft scientific content.** Read [SCIENTIFIC_REVIEW.md](SCIENTIFIC_REVIEW.md) before any release.
 
