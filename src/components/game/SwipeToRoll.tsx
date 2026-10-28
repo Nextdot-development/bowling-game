@@ -40,6 +40,8 @@ const FLICK_SPEED = 0.55;
 const ZONE_TOP = 0.42;
 /** Segments on the power gauge. */
 const POWER_SEGMENTS = 10;
+/** Gap from the ball to the power gauge, as a fraction of the stage width. */
+const GAUGE_OFFSET = 0.15;
 
 export function SwipeToRoll({ phase, hasBall, width, height, aimRef, onAimingChange, onRoll }: SwipeToRollProps) {
   const reduce = useReducedMotion();
@@ -203,11 +205,12 @@ export function SwipeToRoll({ phase, hasBall, width, height, aimRef, onAimingCha
         </svg>
       )}
 
-      {/* Power meter beside the ball: fills as the swipe gets longer and faster. */}
+      {/* Power meter beside the ball: fills as the swipe gets longer and faster. Kept clear of
+          the ball and of the aim guide when the swipe bends right. */}
       {(dragging || shot) && ball && (
         <div
           className="pointer-events-none absolute flex -translate-y-full flex-col items-center gap-1.5"
-          style={{ left: ball.x + ball.r * 1.7, top: ball.y + ball.r }}
+          style={{ left: ball.x + Math.max(ball.r * 2.4, width * GAUGE_OFFSET), top: ball.y + ball.r }}
           aria-hidden
         >
           {(() => {
