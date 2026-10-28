@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Component, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { DRUGS } from "@/data/gameData";
-import { BALL_TRAVEL_MS } from "@/lib/timing";
+import { BALL_TRAVEL_MS, PINS_DOWN_MS } from "@/lib/timing";
 import { useElementSize } from "@/hooks/useElementSize";
 import { useWebGLSupport } from "@/hooks/useWebGLSupport";
 import type { DrugId, GamePhase, LanePins, Pin, RollResult } from "@/types/game";
@@ -118,13 +118,13 @@ export function GameStage({
   useEffect(() => {
     if (phase !== "rolling") aimRef.current = 0;
   }, [phase, selectedDrug]);
-  // After the hit: a big "N PINS" banner across the lane, until the result pop-up.
+  // Once the pins have fallen: a big "N PINS" banner across the lane, until the result pop-up.
   const pinsDown = Object.values(lane).filter((s) => s === "down").length;
   const [banner, setBanner] = useState<number | null>(null);
   useEffect(() => {
     setBanner(null);
     if (phase !== "rolling" || rollStartedAt === null || pinsDown === 0 || pinsDown === Object.keys(lane).length) return;
-    const wait = BALL_TRAVEL_MS + 900 - (performance.now() - rollStartedAt);
+    const wait = BALL_TRAVEL_MS + PINS_DOWN_MS - (performance.now() - rollStartedAt);
     const t = window.setTimeout(() => setBanner(pinsDown), Math.max(0, wait));
     return () => window.clearTimeout(t);
   }, [phase, rollStartedAt, pinsDown, lane]);

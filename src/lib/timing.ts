@@ -1,8 +1,11 @@
 /** Release to the head pin: a long lane and an unhurried roll. */
 export const BALL_TRAVEL_MS = 4200;
 
-/** Time after impact for pins to tip, slide and settle. */
-export const PIN_SETTLE_MS = 3400;
+/** Time after impact for the knocked pins to finish falling and lie still (the last one settles by about 2.2 s). */
+export const PINS_DOWN_MS = 2300;
+
+/** Time after impact for pins to tip, slide and settle, plus a moment for the "N pins" banner. */
+export const PIN_SETTLE_MS = 4200;
 
 /** When the result is revealed (end of the animated roll). */
 export const ROLL_TOTAL_MS = BALL_TRAVEL_MS + PIN_SETTLE_MS;

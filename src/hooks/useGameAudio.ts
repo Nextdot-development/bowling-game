@@ -5,6 +5,9 @@ import { scheduleEndSound, scheduleQuestionSound, type EndOutcome } from "@/lib/
 import { BGM_FILE, BGM_LEVEL, SFX_LEVEL, buildSoundCues, END_SOUND_FILES, SOUND_FILES, SOUND_ONSETS, type SoundName } from "@/lib/rollSound";
 import { GAME_SOUND_EVENT, scheduleUiSound, soundForTarget, type UiSound } from "@/lib/uiSound";
 
+/** Wait before re-fetching the music after its file failed to load. */
+const MUSIC_RETRY_MS = 3000;
+
 export function useGameAudio(enabled: boolean) {
   const ctxRef = useRef<AudioContext | null>(null);
   const masterRef = useRef<GainNode | null>(null);
@@ -13,7 +16,11 @@ export function useGameAudio(enabled: boolean) {
   const activeRef = useRef<Set<AudioScheduledSourceNode>>(new Set());
   const endBuffersRef = useRef<Partial<Record<EndOutcome, AudioBuffer>>>({});
   /** The background music: a looping audio element routed through its own gain, so it can dip under effects. */
-  const bgmRef = useRef<{ el: HTMLAudioElement; gain: GainNode } | null>(null);
+  const bgmRef = useRef<{ el: HTMLAudioElement; source: MediaElementAudioSourceNode; gain: GainNode } | null>(null);
+  /** Pending retry after the music file failed to load. */
+  const musicRetryRef = useRef<number | null>(null);
+  const enabledRef = useRef(enabled);
+  enabledRef.current = enabled;
 
   const ensureContext = useCallback((): AudioContext | null => {
     if (typeof window === "undefined") return null;
@@ -66,12 +73,25 @@ export function useGameAudio(enabled: boolean) {
     return ctx;
   }, []);
 
+  /** Throws the music element away (e.g. its file failed to load), so the next start builds a fresh one. */
+  const dropMusic = useCallback(() => {
+    const bgm = bgmRef.current;
+    if (!bgm) return;
+    bgmRef.current = null;
+    bgm.el.pause();
+    bgm.el.removeAttribute("src");
+    bgm.source.disconnect();
+    bgm.gain.disconnect();
+  }, []);
+
   /** Starts the background music (once audio is unlocked by a tap), or restarts it if the browser paused it. */
   const startMusic = useCallback(() => {
     const ctx = ctxRef.current;
     if (!ctx || ctx.state === "closed" || typeof Audio === "undefined") return;
     // The music is routed through the context: a suspended context plays it silently.
     if (ctx.state !== "running") void ctx.resume().catch(() => {});
+    // A failed load leaves the element broken but not "paused", so it would never be retried.
+    if (bgmRef.current?.el.error) dropMusic();
     if (!bgmRef.current) {
       try {
         const el = new Audio(BGM_FILE);
@@ -79,8 +99,19 @@ export function useGameAudio(enabled: boolean) {
         el.preload = "auto";
         const gain = ctx.createGain();
         gain.gain.value = BGM_LEVEL;
-        ctx.createMediaElementSource(el).connect(gain).connect(ctx.destination);
-        bgmRef.current = { el, gain };
+        const source = ctx.createMediaElementSource(el);
+        source.connect(gain).connect(ctx.destination);
+        bgmRef.current = { el, source, gain };
+        // The file failed to load (network blip on the 4.7 MB file): try again shortly, without waiting for a tap.
+        el.addEventListener("error", () => {
+          if (bgmRef.current?.el !== el) return;
+          dropMusic();
+          if (musicRetryRef.current !== null) window.clearTimeout(musicRetryRef.current);
+          musicRetryRef.current = window.setTimeout(() => {
+            musicRetryRef.current = null;
+            if (enabledRef.current) startMusic();
+          }, MUSIC_RETRY_MS);
+        });
       } catch {
         return; /* no music on this device */
       }
@@ -89,7 +120,7 @@ export function useGameAudio(enabled: boolean) {
     void bgmRef.current.el.play().catch(() => {
       /* blocked until the next tap */
     });
-  }, []);
+  }, [dropMusic]);
 
 
   /** Unlocks audio from a user gesture (e.g. turning sound back on). */
@@ -141,6 +172,8 @@ export function useGameAudio(enabled: boolean) {
   useEffect(
     () => () => {
       stopAll();
+      if (musicRetryRef.current !== null) window.clearTimeout(musicRetryRef.current);
+      musicRetryRef.current = null;
       // The music element is tied to this context; a new context gets a new one.
       bgmRef.current?.el.pause();
       bgmRef.current = null;
