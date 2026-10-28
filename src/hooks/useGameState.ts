@@ -43,8 +43,9 @@ export function useGameState(reducedMotion: boolean) {
     if (rollId === 0 || soundedRoll.current === rollId || !selectedDrug) return;
     if (phase !== "rolling" && !((phase === "result" || phase === "transition") && rollInstant)) return;
     soundedRoll.current = rollId;
-    // The second throw knocks nothing down (the shaking pin only wobbles): no pin crash.
-    const pinsDown = state.frame === 1 && state.attempts === 2 && state.firstThrow ? laneDown(secondThrowLane(state.firstThrow.lane)).length : pinsDownCount(selectedDrug);
+    // The second throw crashes only the pins it knocks down (the shaking pins only wobble).
+    const pinsDown =
+      state.frame === 1 && state.attempts === 2 && state.firstThrow ? laneDown(secondThrowLane(state.firstThrow.lane, selectedDrug)).length : pinsDownCount(selectedDrug);
     void playRoll({ pinsDown, totalPins: TOTAL_PINS, instant: rollInstant });
   }, [phase, rollId, rollInstant, selectedDrug, playRoll, state.frame, state.attempts, state.firstThrow]);
 

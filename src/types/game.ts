@@ -1,7 +1,8 @@
 /** The balls: two conventional combinations (Frame 1) and the novel therapy (Frame 2). */
 export type DrugId = "amoxiclavAzithro" | "amoxiclavClarithro" | "miqnaf";
 export type PinNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
-export type PinStatus = "down" | "standing" | "wobble";
+/** down: falls on the first throw; downSecond: stays up on the first throw, falls on the second. */
+export type PinStatus = "down" | "downSecond" | "standing" | "wobble";
 
 export type RichSegment = string | { em: string };
 export type RichText = readonly RichSegment[];

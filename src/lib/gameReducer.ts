@@ -84,10 +84,10 @@ export function sessionStage(state: GameState): SessionStage {
   }
 }
 
-/** The lane a throw leaves behind: the outcome matrix for a fresh rack, or "shake, don't fall" for the second throw. */
+/** The lane a throw leaves behind: the outcome matrix for a fresh rack, or what the second throw knocks down or shakes. */
 function laneAfter(state: GameState): LanePins {
   const drug = state.selectedDrug!;
-  return state.frame === 1 && state.attempts === 2 && state.firstThrow ? secondThrowLane(state.firstThrow.lane) : rollLane(drug);
+  return state.frame === 1 && state.attempts === 2 && state.firstThrow ? secondThrowLane(state.firstThrow.lane, drug) : rollLane(drug);
 }
 
 function startRoll(state: GameState, at: number, instant: boolean, aim: number | null = null): GameState {

@@ -161,7 +161,7 @@ describe("GameShell", () => {
     expect(within(screen.getByRole("dialog")).getByRole("heading")).toHaveTextContent("Anti-Inflammatory / Immunomodulatory Activity");
   });
 
-  it("Scenario A: first throw 5/10, the same ball again, then 6/10 on the transition", () => {
+  it("Scenario A: first throw 4/10, the same ball again, then 6/10 on the transition", () => {
     startBowling(AZI);
     expect(screen.queryByText("Frame 1 of 2")).not.toBeInTheDocument(); // no frame badge
     const rack = screen.getByRole("region", { name: "Your therapy" });
@@ -169,13 +169,13 @@ describe("GameShell", () => {
     throwFromLane();
     wait(ROLL_TOTAL_MS);
     const r = screen.getByRole("dialog", { name: "Good attempt!" });
-    expect(r).toHaveTextContent("5/10");
+    expect(r).toHaveTextContent("4/10");
     expect(within(r).queryByRole("list", { name: "Down" })).not.toBeInTheDocument(); // the pins that fell are not listed
     expect(r).not.toHaveTextContent("Bactericidal Activity");
     expect(within(r).queryByRole("list", { name: "Shaking" })).not.toBeInTheDocument();
     const standing = within(r).getByRole("list", { name: "Still standing" });
     expect(standing).toHaveTextContent("Susceptibility Vs CABP Pathogens"); // the shaking pin, with the rest
-    expect(within(standing).getAllByRole("listitem")).toHaveLength(5);
+    expect(within(standing).getAllByRole("listitem")).toHaveLength(6); // 1, 3, 4, 5, 8 and 10
     expect(r).toHaveTextContent("However, several treatment barriers remain standing.");
     expect(r).not.toHaveTextContent("Would you like another chance?");
 
@@ -203,21 +203,23 @@ describe("GameShell", () => {
     expect(within(r).getAllByRole("button").map((b) => b.textContent?.trim())).toEqual(["2nd attempt"]);
   });
 
-  it("Scenario B: 7/10 with seven pins down and none shaking, on both throws", () => {
+  it("Scenario B: 5/10 on the first throw, then 7/10 with two more down and none shaking", () => {
     startBowling(CLARI);
     throwFromLane();
     wait(ROLL_TOTAL_MS);
     const r = screen.getByRole("dialog", { name: "Good attempt!" });
-    expect(r).toHaveTextContent("7/10");
+    expect(r).toHaveTextContent("5/10");
     expect(r).not.toHaveTextContent("High Lung Concentration"); // down, so not listed
     expect(r).not.toHaveTextContent("Susceptibility Vs CABP Pathogens"); // down now too
     const standing = within(r).getByRole("list", { name: "Still standing" });
     expect(within(standing).getAllByRole("listitem").map((l) => l.textContent)).toEqual([
       "3Patient Compliance (Dose Frequency)",
       "5QT Prolongation",
+      "6Atypical Coverage",
       "8Managing AMR",
+      "10Post Antibiotic Effect",
     ]);
-    // No shaking pins, so the second throw leaves the score where it was.
+    // The second throw knocks down pins 6 and 10.
     click(within(r).getByRole("button", { name: /^2nd attempt/i }));
     throwFromLane();
     wait(ROLL_TOTAL_MS);
@@ -300,7 +302,7 @@ describe("GameShell", () => {
     mediaState.reducedMotion = true;
     startBowling(CLARI);
     throwFromLane();
-    expect(screen.getByRole("status")).toHaveTextContent("Frame 1, Amoxi-Clav + Clarithromycin: 7 of 10 pins down.");
+    expect(screen.getByRole("status")).toHaveTextContent("Frame 1, Amoxi-Clav + Clarithromycin: 5 of 10 pins down.");
     click(button(/^2nd attempt/i));
     throwFromLane();
     wait(0);
@@ -332,7 +334,7 @@ describe("GameShell", () => {
     await user.click(screen.getByRole("button", { name: /^Amoxi-Clav \+ Clarithromycin/ }));
     screen.getByRole("button", { name: /^Roll the ball/ }).focus();
     await user.keyboard("{Enter}");
-    expect(screen.getByRole("status")).toHaveTextContent("Frame 1, Amoxi-Clav + Clarithromycin: 7 of 10 pins down.");
+    expect(screen.getByRole("status")).toHaveTextContent("Frame 1, Amoxi-Clav + Clarithromycin: 5 of 10 pins down.");
   });
 
   it("pin card closes on Escape", async () => {

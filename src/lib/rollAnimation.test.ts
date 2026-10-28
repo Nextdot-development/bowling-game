@@ -10,7 +10,7 @@ import type { LanePins, PinNumber } from "@/types/game";
 const ALL_PINS = PINS.map((p) => p.number);
 
 /** Every throw of a session on the line set by the chosen therapy: both Frame 1 throws, and MIQNAF® at a fresh rack. */
-const throwsFor = (therapy: (typeof CONVENTIONAL_BALLS)[number]): LanePins[] => [rollLane(therapy), secondThrowLane(rollLane(therapy))];
+const throwsFor = (therapy: (typeof CONVENTIONAL_BALLS)[number]): LanePins[] => [rollLane(therapy), secondThrowLane(rollLane(therapy), therapy)];
 
 describe("roll animation", () => {
   it("ball path depends only on time and the throw's line (never the drug)", () => {
@@ -179,10 +179,10 @@ describe("roll animation", () => {
     }
   });
 
-  it("on the second throw the rack stays exactly as the first throw left it: only the shaking pin wobbles", () => {
+  it("on the second throw the configured pins fall, the shaking pins wobble, and the rest stay still", () => {
     for (const drug of CONVENTIONAL_BALLS) {
       const first = rollLane(drug);
-      const lane = secondThrowLane(first);
+      const lane = secondThrowLane(first, drug);
       const line = ballLineFor(48211.9, drug, 0.3, lane);
       const ctx = { pathX: line.pocket, strike: false, sweeping: false, resetSinceMs: null };
       for (const n of ALL_PINS) {
@@ -192,6 +192,10 @@ describe("roll animation", () => {
           // Cleared away: only the standing pins are on the lane.
           expect(atStart.opacity).toBe(0);
           expect(end.opacity).toBe(0);
+        } else if (lane[n] === "down") {
+          // Knocked down by the second throw: up at the start, toppled by the end.
+          expect(atStart).toMatchObject({ lift: 0, dx: 0, dz: 0, angle: 0 });
+          expect(end.angle).toBeGreaterThan(1);
         } else if (first[n] === "wobble") {
           // The pin the first throw left shaking wobbles again, and stays up.
           expect(lane[n]).toBe("wobble");
@@ -208,7 +212,7 @@ describe("roll animation", () => {
   });
 
   it("between frames the deck is swept, then a fresh rack of ten is lowered into place", () => {
-    const lane = secondThrowLane(rollLane("amoxiclavClarithro"));
+    const lane = secondThrowLane(rollLane("amoxiclavClarithro"), "amoxiclavClarithro");
     const ctx = (since: number | null) => ({ pathX: 0, strike: false, sweeping: false, resetSinceMs: since });
     for (const n of ALL_PINS) {
       expect(lanePinPose(n, lane[n], "transition", 0, ctx((SETTER.swept + 0.02) * 1000)).opacity).toBe(0); // swept

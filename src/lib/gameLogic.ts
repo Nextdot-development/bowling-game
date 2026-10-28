@@ -32,8 +32,14 @@ export function pinStatus(drug: DrugId, n: PinNumber): PinStatus {
   return getPin(n).outcome[drug];
 }
 
+/** Pins knocked down by the first throw. */
 export function downPins(drug: DrugId): PinNumber[] {
   return PINS.filter((p) => p.outcome[drug] === "down").map((p) => p.number);
+}
+
+/** Pins left up by the first throw that the second throw knocks down. */
+export function secondDownPins(drug: DrugId): PinNumber[] {
+  return PINS.filter((p) => p.outcome[drug] === "downSecond").map((p) => p.number);
 }
 
 /** Pins still up after the first throw, including any that only shook. */
@@ -92,16 +98,17 @@ export function laneStanding(lane: LanePins): PinNumber[] {
 
 /**
  * The same ball thrown again at what the first throw left: the pins it
- * knocked down are gone; the pins in the supplied "shaking" category shake
- * again but stay up; every other standing pin stays still. No pin falls on a
- * second throw unless an approved outcome is configured.
+ * knocked down are gone; the pins configured to fall on the second throw
+ * fall; the pins in the supplied "shaking" category shake but stay up; every
+ * other standing pin stays still.
  */
-export function secondThrowLane(first: LanePins): LanePins {
+export function secondThrowLane(first: LanePins, drug: DrugId): LanePins {
   return Object.fromEntries(
     PINS.map((p) => {
       const s = first[p.number];
-      // Cleared pins are gone; nothing falls: the pin left shaking only wobbles again, the rest stay up.
-      return [p.number, s === "down" || s === "gone" ? "gone" : s === "wobble" ? "wobble" : "up"];
+      if (s === "down" || s === "gone") return [p.number, "gone"];
+      if (p.outcome[drug] === "downSecond") return [p.number, "down"];
+      return [p.number, s === "wobble" ? "wobble" : "up"];
     }),
   ) as Record<PinNumber, LanePin>;
 }

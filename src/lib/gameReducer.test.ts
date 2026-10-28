@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CONVENTIONAL_BALLS, NOVEL_BALL } from "@/data/gameData";
 import { gameReducer, initialGameState, sessionStage, type GameAction } from "@/lib/gameReducer";
-import { cleanDoctorName, rollLane, secondThrowLane } from "@/lib/gameLogic";
+import { cleanDoctorName, rollLane, secondDownPins, secondThrowLane } from "@/lib/gameLogic";
 import type { DrugId, GameState } from "@/types/game";
 
 const run = (actions: GameAction[], from: GameState = initialGameState) => actions.reduce(gameReducer, from);
@@ -107,8 +107,8 @@ describe("therapy selection", () => {
 
 describe("Frame 1", () => {
   it.each([
-    ["amoxiclavAzithro", 5, "wobble"], // Susceptibility shakes
-    ["amoxiclavClarithro", 7, "down"],
+    ["amoxiclavAzithro", 4, "wobble"], // Susceptibility shakes
+    ["amoxiclavClarithro", 5, "down"],
   ] as const)("the first throw of %s gives the supplied pin states (%i down, Susceptibility %s)", (drug, down, susceptibility) => {
     const s = firstThrow(drug);
     expect(sessionStage(s)).toBe("FRAME_1_RESULT");
@@ -117,13 +117,13 @@ describe("Frame 1", () => {
     expect(s.firstThrow?.lane[1]).toBe(susceptibility);
   });
 
-  it("the second throw uses the same ball and knocks nothing more down", () => {
+  it("the second throw uses the same ball and knocks down the configured pins", () => {
     for (const drug of CONVENTIONAL_BALLS) {
       const s = bothThrows(drug);
       expect(sessionStage(s)).toBe("TRANSITION");
       expect(s.secondThrow?.drug).toBe(drug);
-      expect(s.secondThrow?.lane).toEqual(secondThrowLane(rollLane(drug)));
-      expect(s.secondThrow?.pinsDown).toBe(s.firstThrow?.pinsDown);
+      expect(s.secondThrow?.lane).toEqual(secondThrowLane(rollLane(drug), drug));
+      expect(s.secondThrow?.pinsDown).toBe(s.firstThrow!.pinsDown + secondDownPins(drug).length);
       expect(s.lineSeed).toBe(3000); // each throw takes its own path
     }
   });

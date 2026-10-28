@@ -11,7 +11,7 @@ import {
   PINS,
   WHY_MIQNAF,
 } from "@/data/gameData";
-import { downPins, pinsDownCount, richToPlain, rollLane, secondThrowLane, standingPins, wobbles } from "@/lib/gameLogic";
+import { downPins, laneDown, pinsDownCount, richToPlain, rollLane, secondDownPins, secondThrowLane, standingPins, wobbles } from "@/lib/gameLogic";
 import { FRONT_ROW_Z, pinPosition } from "@/lib/laneLayout";
 import { EXPECTED_NAMES, validateOutcomeMatrix } from "@/lib/outcomeValidation";
 import type { DrugId, PinNumber } from "@/types/game";
@@ -41,23 +41,26 @@ describe("outcome matrix", () => {
   });
 
   it.each([
-    ["amoxiclavAzithro", [2, 6, 7, 9, 10], [1, 4], [3, 5, 8]],
-    ["amoxiclavClarithro", [1, 2, 4, 6, 7, 9, 10], [], [3, 5, 8]],
-    ["miqnaf", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], [], []],
-  ] as const)("%s: down %j, shaking %j, standing %j (as supplied)", (drug, down, shaking, standing) => {
+    ["amoxiclavAzithro", [2, 6, 7, 9], [10], [1, 4], [3, 5, 8]],
+    ["amoxiclavClarithro", [1, 2, 4, 7, 9], [6, 10], [], [3, 5, 8]],
+    ["miqnaf", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], [], [], []],
+  ] as const)("%s: first throw down %j, second throw down %j, shaking %j, standing %j (as supplied)", (drug, down, second, shaking, standing) => {
     expect(downPins(drug)).toEqual(down);
+    expect(secondDownPins(drug)).toEqual(second);
     expect(PINS.filter((p) => wobbles(drug, p.number)).map((p) => p.number)).toEqual(shaking);
-    expect(standingPins(drug).filter((n) => !wobbles(drug, n))).toEqual(standing);
+    expect(standingPins(drug).filter((n) => !wobbles(drug, n) && !second.includes(n as never))).toEqual(standing);
     expect(pinsDownCount(drug) + standingPins(drug).length).toBe(10);
   });
 
-  it("the second throw knocks nothing more down: cleared pins stay gone, only the shaking pin shakes", () => {
+  it("the second throw: cleared pins stay gone, the configured pins fall, the shaking pins shake", () => {
     for (const drug of CONVENTIONAL_BALLS) {
       const first = rollLane(drug);
-      const second = secondThrowLane(first);
+      const second = secondThrowLane(first, drug);
       for (const pin of PINS) {
-        expect(second[pin.number]).toBe(first[pin.number] === "down" ? "gone" : first[pin.number] === "wobble" ? "wobble" : "up");
+        const expected = first[pin.number] === "down" ? "gone" : secondDownPins(drug).includes(pin.number) ? "down" : first[pin.number] === "wobble" ? "wobble" : "up";
+        expect(second[pin.number]).toBe(expected);
       }
+      expect(laneDown(second)).toEqual(secondDownPins(drug));
     }
   });
 });
@@ -71,10 +74,10 @@ describe("configuration", () => {
   });
 
   it("uses the supplied scores as configured values (draft)", () => {
-    expect(FIRST_THROW_SCORE.amoxiclavAzithro).toBe(5);
-    expect(FIRST_THROW_SCORE.amoxiclavClarithro).toBe(7);
-    expect(FRAME_1_SCORE.amoxiclavAzithro).toBe(6); // final score: two shaking pins add half a point each
-    expect(FRAME_1_SCORE.amoxiclavClarithro).toBe(7); // no shaking pins: unchanged by the second throw
+    expect(FIRST_THROW_SCORE.amoxiclavAzithro).toBe(4);
+    expect(FIRST_THROW_SCORE.amoxiclavClarithro).toBe(5);
+    expect(FRAME_1_SCORE.amoxiclavAzithro).toBe(6); // final score: 5 down, and two shaking pins add half a point each
+    expect(FRAME_1_SCORE.amoxiclavClarithro).toBe(7); // 7 down, no shaking pins
     expect(FRAME_2_SCORE).toBe(10);
   });
 

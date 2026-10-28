@@ -87,7 +87,7 @@ describe("the ball stays in frame", () => {
     const failures: string[] = [];
     for (const aspect of ASPECTS)
       for (const drug of Object.keys(DRUGS) as DrugId[])
-        for (const lane of [rollLane(drug), secondThrowLane(rollLane(drug))])
+        for (const lane of [rollLane(drug), secondThrowLane(rollLane(drug), drug)])
           for (const aim of AIMS)
             for (const seed of SEEDS)
               for (const strip of STRIPS) {

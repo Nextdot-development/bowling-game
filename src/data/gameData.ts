@@ -42,6 +42,8 @@ export const DRUGS: Readonly<Record<DrugId, Drug>> = {
 };
 
 const D = "down" as const;
+/** Stays up on the first throw, falls on the second. */
+const D2 = "downSecond" as const;
 const S = "standing" as const;
 /** The shaking pin: rocks but stays up (counts as standing, scored as half). */
 const W = "wobble" as const;
@@ -52,23 +54,23 @@ export const PINS: readonly Pin[] = [
   { number: 3, label: "Compliance", name: ["Patient Compliance (Dose Frequency)"], outcome: { amoxiclavAzithro: S, amoxiclavClarithro: S, miqnaf: D } },
   { number: 4, label: "Lung conc.", name: ["High Lung Concentration"], outcome: { amoxiclavAzithro: W, amoxiclavClarithro: D, miqnaf: D } },
   { number: 5, label: "QT prolongation", name: ["QT Prolongation"], outcome: { amoxiclavAzithro: S, amoxiclavClarithro: S, miqnaf: D } },
-  { number: 6, label: "Atypicals", name: ["Atypical Coverage"], outcome: { amoxiclavAzithro: D, amoxiclavClarithro: D, miqnaf: D } },
+  { number: 6, label: "Atypicals", name: ["Atypical Coverage"], outcome: { amoxiclavAzithro: D, amoxiclavClarithro: D2, miqnaf: D } },
   { number: 7, label: "Anti-inflam.", name: ["Anti-Inflammatory / Immunomodulatory Activity"], outcome: { amoxiclavAzithro: D, amoxiclavClarithro: D, miqnaf: D } },
   { number: 8, label: "AMR", name: ["Managing AMR"], outcome: { amoxiclavAzithro: S, amoxiclavClarithro: S, miqnaf: D } },
   { number: 9, label: "Low DDI", name: ["Low Drug-Drug Interaction"], outcome: { amoxiclavAzithro: D, amoxiclavClarithro: D, miqnaf: D } },
-  { number: 10, label: "Post-antibiotic", name: ["Post Antibiotic Effect"], outcome: { amoxiclavAzithro: D, amoxiclavClarithro: D, miqnaf: D } },
+  { number: 10, label: "Post-antibiotic", name: ["Post Antibiotic Effect"], outcome: { amoxiclavAzithro: D2, amoxiclavClarithro: D2, miqnaf: D } },
 ];
 
 /**
  * Scores as supplied, configured explicitly (never calculated from the pins).
- * Client update of 2026-10-28: the first throw scores a point per pin down;
- * the second throw adds half a point per shaking pin. Amoxi-Clav + Azithromycin:
- * 5 down, 2 shaking, so 5/10 then 6/10. Amoxi-Clav + Clarithromycin: 7 down,
- * none shaking, so 7/10 on both throws.
+ * Client update of 2026-10-28: a point per pin down, plus half a point per
+ * shaking pin after the second throw. Amoxi-Clav + Azithromycin: 4 down, then
+ * 1 more with 2 shaking, so 4/10 then 6/10. Amoxi-Clav + Clarithromycin: 5 down,
+ * then 2 more, none shaking, so 5/10 then 7/10.
  */
 export const FIRST_THROW_SCORE: Readonly<Record<DrugId, number | null>> = {
-  amoxiclavAzithro: 5,
-  amoxiclavClarithro: 7,
+  amoxiclavAzithro: 4,
+  amoxiclavClarithro: 5,
   miqnaf: null,
 };
 export const FRAME_1_SCORE: Readonly<Record<DrugId, number | null>> = {

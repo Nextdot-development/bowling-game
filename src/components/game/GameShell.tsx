@@ -87,7 +87,7 @@ export function GameShell({ force2D = false }: GameShellProps) {
   // up; on the second throw, what the first left (its fallen pins gone).
   const lane: LanePins = useMemo(() => {
     if (state.phase === "rolling" && state.selectedDrug) {
-      if (state.frame === 1 && state.attempts === 2 && state.firstThrow) return secondThrowLane(state.firstThrow.lane);
+      if (state.frame === 1 && state.attempts === 2 && state.firstThrow) return secondThrowLane(state.firstThrow.lane, state.selectedDrug);
       // First throw: the down pins fall; the shaking pins only shake on the second throw, so here they stand still.
       const first = rollLane(state.selectedDrug);
       return state.frame === 1 ? (Object.fromEntries(Object.entries(first).map(([n, s]) => [n, s === "wobble" ? "up" : s])) as LanePins) : first;

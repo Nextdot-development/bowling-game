@@ -51,6 +51,6 @@ describe("useGameState", () => {
     expect(playRoll).toHaveBeenCalledTimes(6);
     // Each session: first throw (pins fall), second throw (none fall: no strike sound), MIQNAF® (all ten).
     const pinsDown = playRoll.mock.calls.map((c) => (c as unknown as [{ pinsDown: number }])[0].pinsDown);
-    expect(pinsDown).toEqual([5, 0, 10, 7, 0, 10]);
+    expect(pinsDown).toEqual([4, 1, 10, 5, 2, 10]);
   });
 });
