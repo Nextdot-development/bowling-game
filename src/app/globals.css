@@ -1,0 +1,791 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display-fallback: "Helvetica Neue", Arial, sans-serif;
+  --font-body-fallback: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color-scheme: light;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    /* Touch kiosk: no double-tap zoom, no grey tap flash, no rubber-banding. */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+  }
+  @media (min-width: 900px) and (min-height: 500px) and (min-aspect-ratio: 4/3) {
+    html {
+      font-size: clamp(6px, min(0.8333vw, 1.4815vh), 36px);
+    }
+  }
+  /* Standard-density screens (laptops and monitors at 100–125% scaling) keep
+     text readable on small viewports. High-density screens, including the
+     kiosk panel at 150–200% Windows scaling, scale freely as above. */
+  @media (min-width: 900px) and (min-height: 500px) and (min-aspect-ratio: 4/3) and (max-resolution: 1.49dppx) {
+    html {
+      font-size: clamp(12px, min(0.8333vw, 1.4815vh), 36px);
+    }
+  }
+  /* Tablets in landscape (4:3 to 16:10, any density) keep the same readable floor. */
+  @media (min-width: 900px) and (min-height: 500px) and (min-aspect-ratio: 4/3) and (max-aspect-ratio: 8/5) {
+    html {
+      font-size: clamp(12px, min(0.8333vw, 1.4815vh), 36px);
+    }
+  }
+  body {
+    @apply bg-surface-page text-ink antialiased;
+    font-family: var(--font-body), var(--font-body-fallback);
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family: var(--font-display), var(--font-display-fallback);
+  }
+  :focus-visible {
+    outline: 3px solid rgb(var(--brand-gold-rgb));
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-3 rounded-2xl bg-brand-gold font-display font-black uppercase tracking-wide text-brand-navy;
+    /* Arcade button: a glossy top edge, a deep bottom edge, and it presses down. */
+    box-shadow:
+      inset 0 2px 0 rgb(255 255 255 / 0.55),
+      inset 0 -7px 0 rgb(0 0 0 / 0.2),
+      0 8px 16px -10px rgb(0 0 0 / 0.55);
+    transition: transform 110ms cubic-bezier(0.3, 1.6, 0.5, 1), box-shadow 110ms ease, background-color 120ms ease;
+  }
+  @media (hover: hover) {
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px) scale(1.02);
+    }
+  }
+  .btn-primary:active:not(:disabled) {
+    transform: translateY(4px) scale(0.98);
+    box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.4), inset 0 -2px 0 rgb(0 0 0 / 0.2);
+  }
+  .btn-primary:disabled {
+    @apply cursor-not-allowed bg-surface-sunken text-ink-soft;
+    box-shadow: none;
+  }
+  .btn-primary:focus-visible {
+    outline-color: rgb(var(--brand-navy-rgb));
+  }
+
+  /* The second button on a pop-up: gold outline on the navy panel, beside the gold main button. */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-3 rounded-2xl border-[3px] border-brand-gold bg-transparent font-display font-black uppercase tracking-wide text-brand-gold transition-colors;
+  }
+  .btn-ghost:active:not(:disabled) {
+    @apply bg-brand-gold/15;
+  }
+  .btn-outline {
+    @apply inline-flex items-center gap-2 rounded-full border-2 border-brand-navy bg-surface px-4 py-2 font-semibold text-brand-navy transition-colors;
+  }
+  .btn-outline:active:not(:disabled) {
+    @apply bg-brand-navy/10;
+  }
+  @media (hover: hover) {
+    .btn-outline:hover:not(:disabled) {
+      @apply bg-brand-navy/5;
+    }
+  }
+  .btn-outline:disabled {
+    @apply cursor-not-allowed border-line text-ink-soft;
+  }
+
+  /* Arcade pop-up panel: deep navy, a light bevelled frame, a darker header band. */
+  /* The game's pop-up: a navy card in a thick gold frame, lighter at the top. */
+  .game-panel {
+    @apply overflow-hidden rounded-[2rem] text-white;
+    background: rgb(var(--brand-navy-rgb));
+    border: 5px solid rgb(var(--brand-gold-rgb));
+    box-shadow:
+      0 0 0 4px color-mix(in srgb, rgb(var(--brand-navy-rgb)) 40%, black),
+      inset 0 0 0 3px color-mix(in srgb, rgb(var(--brand-navy-rgb)) 40%, black),
+      inset 0 5px 0 rgb(255 255 255 / 0.12),
+      0 28px 60px -18px rgb(0 0 0 / 0.8);
+  }
+  .game-panel-head {
+    @apply px-5 py-3 text-center sm:py-4;
+    background: rgb(0 0 0 / 0.25);
+    border-bottom: 2px solid rgb(var(--brand-gold-rgb) / 0.55);
+  }
+  /* Pop-up titles: big, tilted gold lettering with a thick navy outline and a deep drop. */
+  .game-panel-title {
+    @apply font-display text-[2.1rem] uppercase leading-none sm:text-6xl;
+    letter-spacing: 0.01em;
+    color: rgb(var(--brand-gold-rgb));
+    -webkit-text-stroke: 0.07em color-mix(in srgb, rgb(var(--brand-navy-rgb)) 60%, black);
+    paint-order: stroke fill;
+    filter: drop-shadow(0 0.07em 0 color-mix(in srgb, rgb(var(--brand-navy-rgb)) 50%, black)) drop-shadow(0 0.12em 0.2em rgb(0 0 0 / 0.45));
+  }
+  /* The instruction card on the lane: the same gold-edged style as the pop-ups. */
+  .lane-card {
+    background: rgb(var(--brand-navy-rgb));
+    box-shadow: 0 0 0 2px rgb(var(--brand-gold-rgb) / 0.85), 0 0 0 5px rgb(0 0 0 / 0.35), 0 0 30px -6px rgb(var(--brand-gold-rgb) / 0.4), 0 14px 30px -12px rgb(0 0 0 / 0.7);
+  }
+  @media (min-width: 900px) and (min-height: 500px) and (min-aspect-ratio: 4/3) {
+    .game-panel-title {
+      font-size: clamp(3rem, 7vh, 4.8rem);
+    }
+  }
+  .game-panel-rule {
+    @apply w-full border-t border-white/15;
+  }
+  /* The product logo is navy artwork: it sits on a small white plate on the dark panel. */
+  .game-panel-logo {
+    @apply inline-flex rounded-xl bg-white px-4 py-1.5;
+  }
+
+  /* A heading that slams in like a game banner. */
+  .game-stamp {
+    animation: game-stamp 520ms cubic-bezier(0.2, 1.6, 0.4, 1) both;
+  }
+  @keyframes game-stamp {
+    0% {
+      opacity: 0;
+      transform: scale(2.2);
+    }
+    60% {
+      opacity: 1;
+      transform: scale(0.94);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  .eyebrow {
+    @apply text-xs font-bold uppercase tracking-[0.16em] text-ink-muted;
+  }
+
+  .pin-chip {
+    @apply relative inline-flex flex-col items-center gap-1 whitespace-nowrap rounded-xl bg-surface/95 px-2 pb-1.5 pt-1 text-[0.9rem] font-bold leading-none text-brand-navy;
+    box-shadow: 0 2px 6px rgb(0 0 0 / 0.25);
+    transition: transform 120ms ease, background-color 120ms ease;
+  }
+  /* Larger invisible hit area for fingers, without enlarging the chip. */
+  .pin-chip::after {
+    content: "";
+    position: absolute;
+    inset: -0.6rem -0.2rem;
+  }
+  /* Touch screens: a bigger hit area still, for fingers on small lanes. */
+  @media (pointer: coarse) {
+    .pin-chip::after {
+      inset: -0.75rem -0.6rem;
+    }
+  }
+  .pin-chip:active:not(:disabled) {
+    transform: scale(0.94);
+  }
+  @media (hover: hover) {
+    .pin-chip:hover:not(:disabled) {
+      transform: scale(1.06);
+      @apply bg-surface;
+    }
+  }
+  .pin-chip:disabled {
+    cursor: default;
+  }
+  .pin-chip-num {
+    @apply inline-flex h-[1.4rem] min-w-[1.4rem] items-center justify-center rounded-full bg-brand-navy px-1 text-[0.8rem] text-white;
+  }
+  .lane-compact .pin-chip {
+    @apply rounded-full p-1;
+  }
+  .lane-compact .pin-chip-text {
+    display: none;
+  }
+  /* Number-only tags: big enough to read and tap on the kiosk. */
+  .lane-compact .pin-chip-num {
+    @apply h-[2rem] min-w-[2rem] text-[1.05rem];
+  }
+  @media (max-width: 420px) {
+    .lane-compact .pin-chip {
+      @apply p-0.5;
+    }
+    .lane-compact .pin-chip-num {
+      @apply h-[1.15rem] min-w-[1.15rem] text-[0.68rem];
+    }
+  }
+
+  .ball-swatch {
+    @apply relative inline-block shrink-0 rounded-full;
+    background: radial-gradient(circle at 34% 30%, rgb(255 255 255 / 0.7) 0, rgb(255 255 255 / 0) 34%),
+      radial-gradient(circle at 50% 50%, var(--ball) 55%, color-mix(in srgb, var(--ball) 60%, black) 100%);
+    box-shadow: 0 6px 14px -6px rgb(0 0 0 / 0.5);
+  }
+  .ball-swatch::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 34% 34%, rgb(0 0 0 / 0.65) 0 6%, transparent 7%),
+      radial-gradient(circle at 62% 30%, rgb(0 0 0 / 0.65) 0 6%, transparent 7%),
+      radial-gradient(circle at 50% 50%, rgb(0 0 0 / 0.65) 0 7%, transparent 8%);
+    border-radius: 9999px;
+  }
+
+  /* The arena behind the lane: deep navy, darkest at the edges, a soft glow over the pins. */
+  .lane-stage {
+    background:
+      radial-gradient(60% 45% at 50% 30%, rgb(var(--brand-navy-rgb) / 0.9), transparent 70%),
+      linear-gradient(180deg, color-mix(in srgb, var(--brand-navy) 35%, black) 0%, color-mix(in srgb, var(--brand-navy) 70%, black) 45%, color-mix(in srgb, var(--brand-navy) 45%, black) 100%);
+  }
+  .lane-stage::before {
+    content: "";
+    position: absolute;
+    left: 15%;
+    right: 15%;
+    top: -8%;
+    height: 30%;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgb(255 255 255 / 0.16), rgb(255 255 255 / 0));
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .btn-blink {
+    animation: btn-blink 2s ease-in-out infinite;
+  }
+  .btn-blink:active:not(:disabled) {
+    animation: none;
+  }
+  /* A gentle pulse (no glow): the button's own shadow stays as it is. */
+  @keyframes btn-blink {
+    0%,
+    100% {
+      transform: scale(1);
+      filter: brightness(1);
+    }
+    50% {
+      transform: scale(1.015);
+      filter: brightness(1.09);
+    }
+  }
+
+  /* The balls on the ball return while choosing: a pulsing gold ring. */
+  .rack-ball-glow {
+    box-shadow: 0 0 0 3px rgb(var(--brand-gold-rgb)), 0 0 18px 4px rgb(var(--brand-gold-rgb) / 0.55);
+    animation: rack-ball-glow 1.6s ease-in-out infinite;
+  }
+  @keyframes rack-ball-glow {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.1);
+      opacity: 0.55;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rack-ball-glow {
+      animation: none;
+    }
+  }
+
+  /* The game's pages: the dark arena behind the lane, panels and pop-ups. */
+  .game-page {
+    background:
+      color-mix(in srgb, var(--brand-navy) 45%, black);
+  }
+  /* Header: a dark arcade bar with a soft gold glow along its foot. */
+  .game-header {
+    background: color-mix(in srgb, var(--brand-navy) 75%, black);
+    box-shadow: 0 6px 24px -10px rgb(var(--brand-gold-rgb) / 0.35);
+  }
+  .game-header-title {
+    text-shadow: 0 3px 0 rgb(0 0 0 / 0.5);
+  }
+
+  /* Opening: things that wait for the camera sweep to finish. */
+  .intro-late {
+    animation: intro-fade 0.6s ease-out 2.5s both;
+  }
+  @keyframes intro-fade {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .intro-late {
+      animation: none;
+    }
+  }
+
+  .tricolour-rule {
+    background: linear-gradient(
+      90deg,
+      rgb(var(--brand-navy-rgb)) 0 70%,
+      rgb(var(--brand-red-rgb)) 70% 90%,
+      rgb(var(--brand-gold-rgb)) 90% 100%
+    );
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@layer utilities {
+  /* Pop-ups still scroll on very short screens, but never show a scrollbar. */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer components {
+  /* Welcome screen: the dark arena of the game, with a soft spotlight behind the title. */
+  .welcome-stage {
+    background:
+      color-mix(in srgb, var(--brand-navy) 45%, black);
+  }
+  .welcome-title {
+    text-shadow: 0 4px 0 rgb(0 0 0 / 0.45), 0 0 40px rgb(var(--brand-gold-rgb) / 0.12);
+  }
+}
+
+@layer components {
+  /* Pin numbers on the pins: a round badge on each pin's head, sized to the rack (--chip). */
+  .pin-on-pin .pin-chip {
+    @apply rounded-full bg-transparent p-0;
+    box-shadow: none;
+  }
+  .pin-on-pin .pin-chip-text {
+    display: none;
+  }
+  .pin-on-pin .pin-chip-num {
+    height: var(--chip);
+    min-width: var(--chip);
+    font-size: calc(var(--chip) * 0.52);
+    font-weight: 800;
+    box-shadow: 0 0 0 2px rgb(255 255 255 / 0.95), 0 2px 6px rgb(0 0 0 / 0.45);
+  }
+  /* On the 3D lane the number is painted on the pin; the badge is just its (invisible) tap target. */
+  .pin-on-pin.pin-painted .pin-chip-num {
+    opacity: 0;
+  }
+}
+
+@layer components {
+  /* A solid card over the lane (the lane never shows through its text). */
+  .solid-panel {
+    background: color-mix(in srgb, var(--brand-navy) 55%, #05081a);
+  }
+}
+
+@layer components {
+  /* Game-logo lettering: a glossy gold gradient with a navy outline and a 3D drop, like an arcade title. */
+  .game-logo {
+    @apply font-display uppercase;
+    letter-spacing: 0.01em;
+    color: rgb(var(--brand-gold-rgb));
+    -webkit-text-stroke: 0.045em rgb(var(--brand-navy-rgb));
+    paint-order: stroke fill;
+    filter: drop-shadow(0 0.06em 0 rgb(var(--brand-navy-rgb))) drop-shadow(0 0.12em 0.18em rgb(0 0 0 / 0.55));
+  }
+  /* Welcome: shade the top of the lane for the title, and the foot for the ball names. */
+  .welcome-shade {
+    background:
+      linear-gradient(180deg, rgb(7 11 34 / 0.92) 0%, rgb(7 11 34 / 0.55) 38%, rgb(7 11 34 / 0) 62%, rgb(7 11 34 / 0.35) 100%);
+  }
+}
+
+@layer components {
+  /* The score as a navy pill beside the product logo. */
+  .score-pill {
+    @apply inline-flex items-center gap-3 rounded-full px-5 py-2;
+    background: color-mix(in srgb, rgb(var(--brand-navy-rgb)) 60%, black);
+    box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.25), 0 6px 14px -6px rgb(0 0 0 / 0.6);
+  }
+  /* A gold speech bubble for the question to the doctor. */
+  .game-bubble {
+    @apply relative inline-block rounded-2xl bg-brand-gold px-6 py-3 font-display text-2xl leading-tight text-brand-navy sm:text-3xl;
+    box-shadow: inset 0 3px 0 rgb(255 255 255 / 0.45), inset 0 -4px 0 rgb(0 0 0 / 0.18), 0 10px 22px -10px rgb(0 0 0 / 0.6);
+    animation: game-wiggle 2.4s ease-in-out 0.8s infinite;
+  }
+  .game-bubble::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -0.7rem;
+    width: 1.4rem;
+    height: 0.8rem;
+    transform: translateX(-50%);
+    background: rgb(var(--brand-gold-rgb));
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+  }
+  @keyframes game-wiggle {
+    0%,
+    86%,
+    100% {
+      transform: scale(1);
+    }
+    90% {
+      transform: scale(1.04);
+    }
+    95% {
+      transform: scale(1);
+    }
+  }
+  @media (min-width: 900px) and (min-height: 500px) and (min-aspect-ratio: 4/3) {
+    .game-bubble {
+      font-size: clamp(1.6rem, 3.4vh, 2.3rem);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .game-bubble {
+      animation: none;
+    }
+  }
+}
+
+
+@layer components {
+  /* A personal greeting title: big white lettering with a navy outline, as written. */
+  .game-panel-letter {
+    @apply font-display text-[2.1rem] leading-none text-white sm:text-5xl;
+    -webkit-text-stroke: 0.05em color-mix(in srgb, rgb(var(--brand-navy-rgb)) 60%, black);
+    paint-order: stroke fill;
+    filter: drop-shadow(0 0.06em 0 color-mix(in srgb, rgb(var(--brand-navy-rgb)) 50%, black));
+  }
+  @media (min-width: 900px) and (min-height: 500px) and (min-aspect-ratio: 4/3) {
+    .game-panel-letter {
+      font-size: clamp(2.6rem, 6vh, 4rem);
+    }
+  }
+  /* Light rays behind a pop-up, turning slowly. */
+  .light-rays {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 150vmax;
+    height: 150vmax;
+    margin: -75vmax 0 0 -75vmax;
+    pointer-events: none;
+    background: repeating-conic-gradient(from 0deg, rgb(255 255 255 / 0.13) 0deg 9deg, transparent 9deg 22.5deg);
+    -webkit-mask-image: radial-gradient(closest-side, black 20%, transparent 100%);
+    mask-image: radial-gradient(closest-side, black 20%, transparent 100%);
+    animation: light-rays 40s linear infinite;
+    will-change: transform;
+  }
+  @keyframes light-rays {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .light-rays {
+      animation: none;
+    }
+  }
+}
+
+@layer components {
+  /* Scoreboard monitor, like the screens over a real bowling lane: a dark bezel around a
+     navy screen with a grid, gold headings, a dark total column, and the winning row lit up. */
+  .score-monitor {
+    @apply overflow-hidden rounded-xl;
+    background: color-mix(in srgb, rgb(var(--brand-navy-rgb)) 70%, black);
+    border: 8px solid #0b0d18;
+    box-shadow: 0 0 0 2px #2a2f45, 0 18px 34px -14px rgb(0 0 0 / 0.8);
+  }
+  .score-monitor-head th {
+    @apply font-display text-base uppercase tracking-[0.12em] text-brand-gold kiosk:text-[1.2rem];
+    background: color-mix(in srgb, rgb(var(--brand-navy-rgb)) 55%, black);
+    border-bottom: 2px solid rgb(255 255 255 / 0.25);
+  }
+  .score-monitor-head th + th,
+  .score-monitor-row td + td {
+    border-left: 2px solid rgb(255 255 255 / 0.25);
+  }
+  .score-monitor-row {
+    @apply text-white;
+    border-bottom: 2px solid rgb(255 255 255 / 0.18);
+  }
+  .score-monitor-row:last-child {
+    border-bottom: 0;
+  }
+  .score-monitor-total {
+    @apply px-3 text-center align-middle text-white sm:px-5;
+  }
+  /* Nafithromycin's row: same cells, gold text. */
+  .score-monitor-lit td {
+    @apply text-brand-gold;
+  }
+}
+
+@layer components {
+  /* Lane loader: a gold ball rolls in and knocks three pins over, on repeat. */
+  .lane-loader {
+    background: color-mix(in srgb, var(--brand-navy) 45%, black);
+  }
+  .lane-loader-track {
+    @apply relative h-16 w-56 kiosk:h-[5rem] kiosk:w-[18rem];
+    border-bottom: 3px solid rgb(var(--brand-gold-rgb) / 0.6);
+  }
+  .lane-loader-ball {
+    @apply absolute bottom-0 left-0 h-10 w-10 rounded-full kiosk:h-[3rem] kiosk:w-[3rem];
+    background: rgb(var(--brand-gold-rgb));
+    box-shadow: inset -5px -5px 0 rgb(0 0 0 / 0.18), 0 0 18px rgb(var(--brand-gold-rgb) / 0.5);
+    animation: loader-roll 1.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  }
+  .lane-loader-ball::before {
+    content: "";
+    position: absolute;
+    inset: 22% 30% auto auto;
+    width: 18%;
+    height: 18%;
+    border-radius: 9999px;
+    background: rgb(var(--brand-navy-rgb));
+    box-shadow: -0.45em 0.15em 0 rgb(var(--brand-navy-rgb)), -0.1em 0.5em 0 rgb(var(--brand-navy-rgb));
+    font-size: 0.6rem;
+  }
+  .lane-loader-pin {
+    @apply absolute bottom-0 h-12 w-3.5 rounded-t-full bg-white kiosk:h-[3.6rem] kiosk:w-[1.05rem];
+    transform-origin: 50% 100%;
+    animation: loader-pin 1.6s ease-out infinite;
+  }
+  .lane-loader-pin:nth-child(1) {
+    right: 2.6rem;
+  }
+  .lane-loader-pin:nth-child(2) {
+    right: 1.4rem;
+  }
+  .lane-loader-pin:nth-child(3) {
+    right: 0.2rem;
+  }
+  @keyframes loader-roll {
+    0% {
+      transform: translateX(0) rotate(0deg);
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    60% {
+      transform: translateX(8.5rem) rotate(540deg);
+      opacity: 1;
+    }
+    75%,
+    100% {
+      transform: translateX(10rem) rotate(640deg);
+      opacity: 0;
+    }
+  }
+  @keyframes loader-pin {
+    0%,
+    55% {
+      transform: rotate(0deg);
+      opacity: 1;
+    }
+    70% {
+      transform: rotate(75deg) translateY(-4px);
+      opacity: 1;
+    }
+    85% {
+      transform: rotate(90deg);
+      opacity: 0;
+    }
+    100% {
+      transform: rotate(0deg);
+      opacity: 0;
+    }
+  }
+  .lane-loader-dots {
+    @apply flex gap-2;
+  }
+  .lane-loader-dots span {
+    @apply h-2.5 w-2.5 rounded-full;
+    background: rgb(var(--brand-gold-rgb));
+    animation: loader-dot 1s ease-in-out infinite;
+  }
+  .lane-loader-dots span:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+  .lane-loader-dots span:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+  @keyframes loader-dot {
+    0%,
+    100% {
+      transform: translateY(0);
+      opacity: 0.4;
+    }
+    50% {
+      transform: translateY(-6px);
+      opacity: 1;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lane-loader-ball,
+    .lane-loader-pin,
+    .lane-loader-dots span {
+      animation: none;
+    }
+  }
+}
+
+@layer components {
+  /* Power gauge beside the ball: a gold-framed navy capsule of segments that light up gold
+     from the bottom as the swipe builds power; the top three glow brighter; full reads MAX. */
+  .power-gauge {
+    @apply flex flex-col items-center gap-1.5;
+  }
+  .power-gauge-value {
+    @apply min-w-[3.6rem] rounded-full bg-brand-navy px-2.5 py-0.5 text-center font-display text-lg leading-tight text-brand-gold kiosk:min-w-[4.6rem] kiosk:text-[1.45rem];
+    box-shadow: 0 0 0 2px rgb(var(--brand-gold-rgb)), 0 6px 14px -6px rgb(0 0 0 / 0.7);
+  }
+  .power-gauge-tube {
+    @apply flex w-9 flex-col gap-[3px] rounded-2xl bg-brand-navy p-[5px] kiosk:w-[2.8rem];
+    box-shadow: 0 0 0 3px rgb(var(--brand-gold-rgb)), 0 0 0 6px color-mix(in srgb, rgb(var(--brand-navy-rgb)) 40%, black), 0 10px 22px -8px rgb(0 0 0 / 0.75);
+  }
+  .power-gauge-seg {
+    @apply flex-1 rounded-[5px];
+    background: rgb(255 255 255 / 0.1);
+    transition: background-color 90ms linear, box-shadow 90ms linear;
+  }
+  .power-gauge-seg.is-lit {
+    background: rgb(var(--brand-gold-rgb));
+    box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.45);
+  }
+  .power-gauge-seg.is-lit.is-hot {
+    background: #ffe27a;
+    box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.6), 0 0 10px rgb(var(--brand-gold-rgb) / 0.9);
+  }
+  .power-gauge-label {
+    @apply font-display text-xs uppercase tracking-[0.2em] text-white kiosk:text-[0.95rem];
+    text-shadow: 0 1px 3px rgb(0 0 0 / 0.9);
+  }
+  .power-gauge-max .power-gauge-tube {
+    animation: gauge-shake 0.18s linear infinite;
+  }
+  .power-gauge-fired {
+    animation: gauge-fire 0.45s cubic-bezier(0.2, 1.8, 0.4, 1);
+  }
+  @keyframes gauge-shake {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    25% {
+      transform: translateX(-1.5px);
+    }
+    75% {
+      transform: translateX(1.5px);
+    }
+  }
+  @keyframes gauge-fire {
+    0% {
+      transform: scale(1);
+    }
+    40% {
+      transform: scale(1.15);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .power-gauge-max .power-gauge-tube,
+    .power-gauge-fired {
+      animation: none;
+    }
+  }
+}
+
+@layer components {
+  /* Greeting pop-up: the question in a gold-edged callout. */
+  .therapy-question {
+    @apply max-w-[46rem] rounded-2xl px-5 py-3 font-display text-xl leading-snug tracking-wide text-white sm:text-2xl;
+    background: color-mix(in srgb, rgb(var(--brand-navy-rgb)) 60%, black);
+    box-shadow: 0 0 0 3px rgb(var(--brand-gold-rgb)), inset 0 -4px 0 rgb(0 0 0 / 0.25);
+  }
+  /* A barrier pin: a raised white tile (like a game key) that pops in. */
+  .barrier-tile {
+    @apply flex items-center gap-3 rounded-2xl bg-white px-3 py-2 text-brand-navy kiosk:gap-[0.85rem] kiosk:px-[0.9rem] kiosk:py-[clamp(0.4rem,0.95vh,0.65rem)];
+    box-shadow: inset 0 -4px 0 rgb(var(--brand-navy-rgb) / 0.18), 0 6px 14px -8px rgb(0 0 0 / 0.6);
+    animation: tile-pop 0.45s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+  }
+  .barrier-pin {
+    @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-gold font-display text-lg text-brand-navy kiosk:h-[clamp(2.3rem,4.4vh,2.9rem)] kiosk:w-[clamp(2.3rem,4.4vh,2.9rem)] kiosk:text-[clamp(1.1rem,2.1vh,1.4rem)];
+    box-shadow: 0 0 0 2px rgb(var(--brand-navy-rgb)), inset 0 -3px 0 rgb(0 0 0 / 0.2);
+  }
+  .barrier-name {
+    @apply font-display text-base leading-tight tracking-wide sm:text-lg kiosk:text-[clamp(1.1rem,2.15vh,1.4rem)];
+  }
+  @keyframes tile-pop {
+    from {
+      opacity: 0;
+      transform: scale(0.85) translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @media (min-width: 900px) and (min-height: 500px) and (min-aspect-ratio: 4/3) {
+    .therapy-question {
+      font-size: clamp(1.4rem, 2.9vh, 1.85rem);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .barrier-tile {
+      animation: none;
+    }
+  }
+}
+
+@layer components {
+  /* Results: the "why" points and the QR card, one matching card style. */
+  .why-card {
+    @apply flex flex-col items-center justify-center rounded-2xl px-3 py-3 text-center short:py-2 kiosk:px-[0.9rem] kiosk:py-[clamp(0.5rem,1.2vh,0.8rem)];
+    background: color-mix(in srgb, rgb(var(--brand-navy-rgb)) 70%, black);
+    box-shadow: inset 0 0 0 2px rgb(var(--brand-gold-rgb) / 0.55);
+  }
+  .why-card-title {
+    @apply font-display text-sm uppercase tracking-[0.12em] text-brand-gold kiosk:text-[clamp(0.95rem,1.8vh,1.2rem)];
+  }
+  .why-card-text {
+    @apply mt-1 text-base font-semibold leading-snug text-white kiosk:text-[clamp(1rem,1.9vh,1.25rem)];
+  }
+}
+
+@layer components {
+  /* "Good attempt!": the big score in a gold-framed card. */
+  .result-score {
+    @apply flex flex-col items-center rounded-3xl px-7 py-4 kiosk:px-[clamp(1.6rem,3.6vh,2.4rem)] kiosk:py-[clamp(0.9rem,2vh,1.3rem)];
+    background: color-mix(in srgb, rgb(var(--brand-navy-rgb)) 60%, black);
+    box-shadow: 0 0 0 3px rgb(var(--brand-gold-rgb)), inset 0 -5px 0 rgb(0 0 0 / 0.25);
+  }
+}

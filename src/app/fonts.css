@@ -1,0 +1,53 @@
+@font-face {
+  font-family: "Acumin Variable Concept";
+  src: url("/font/web/acumin-variable.woff2") format("woff2-variations"),
+    url("/font/web/acumin-variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-stretch: 50% 115%;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Helvetica Neue Brand";
+  src: url("/font/web/helvetica-neue-400.woff2") format("woff2");
+  font-weight: 100 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Helvetica Neue Brand";
+  src: url("/font/web/helvetica-neue-400-italic.woff2") format("woff2");
+  font-weight: 100 600;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Helvetica Neue Brand";
+  src: url("/font/web/helvetica-neue-500.woff2") format("woff2");
+  font-weight: 500 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Helvetica Neue Brand";
+  src: url("/font/web/helvetica-neue-700.woff2") format("woff2");
+  font-weight: 700 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Helvetica Neue Brand";
+  src: url("/font/web/helvetica-neue-700-italic.woff2") format("woff2");
+  font-weight: 700 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+  /* The game fonts (src/app/layout.tsx); the brand faces above stay as fallbacks. */
+  --font-display: var(--font-game-display), "Acumin Variable Concept";
+  --font-body: var(--font-game-body), "Helvetica Neue Brand";
+  /* Lilita One has one weight: never fake a bolder one. */
+  font-synthesis-weight: none;
+}
