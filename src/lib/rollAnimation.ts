@@ -83,6 +83,8 @@ export interface BallLine {
   hook?: number;
   /** Through the rack: sideways drift per metre past the front row (it glances off a pin and veers away). */
   deflect?: number;
+  /** A throw at the rack: its angle off the hand (sideways per unit of the way to the pins). */
+  launch?: number;
 }
 
 /** A straight line down the middle (the resting ball, and the default). */
@@ -111,46 +113,73 @@ function passGap(path: RackPath, px: number, pz: number): number {
 /** How far out a deflected ball can run: along the far side of the gutter. */
 const GUTTER_EDGE = LANE_HALF_WIDTH + GUTTER_WIDTH - BALL_RADIUS;
 
-/** Sideways drifts tried, straight first: the ball glances off a pin and veers away (second throw). */
-const DEFLECTS = [0, -0.15, 0.15, -0.3, 0.3, -0.45, 0.45, -0.6, 0.6];
+/**
+ * Angles the ball may cross the rack at (sideways metres per metre), straight
+ * first. Kept to a real hook ball's entry angle (up to about 8.5°): it reaches
+ * the pins already on that angle, so a steeper one would need an unnatural swing.
+ */
+const DEFLECTS = [0, -0.05, 0.05, -0.1, 0.1, -0.15, 0.15];
+/** Where the ball may enter the rack: across the deck, in 1 cm steps. */
+const ENTRIES = Array.from({ length: 201 }, (_, i) => Math.round((i - 100) * 1.0) / 100);
 
 /**
- * The ball's line through a rack. It meets the pins the throw knocks down and
- * stays clear of every pin left standing; pins already cleared away are not
- * there. A straight line is used when one works; otherwise (the second throw,
- * which must meet the head pin with pins standing behind it) the ball glances
- * off and veers away. A swipe (`aim`, -1 to 1) picks the allowed line nearest
- * where it was aimed.
+ * The ball's line through a rack, chosen so that the ball goes to the pins
+ * that fall or shake: every one of them is struck by the ball, or by a pin it
+ * sends flying (see rackReactions). It never runs through a pin that stays up
+ * and only grazes a pin that just shakes; pins already cleared away are not
+ * there. Among the lines that reach every pin, the one where the ball itself
+ * strikes the most falling pins wins, then a straight line over a glancing,
+ * veering one, then (for a swipe, `aim` -1 to 1) the one nearest where it was
+ * aimed, else the one nearest the pocket.
  */
 export function rackPath(lane: LanePins, aim: number | null = null): RackPath {
   const falls = PINS.filter(({ number: n }) => lane[n] === "down");
-  const standing = PINS.filter(({ number: n }) => lane[n] === "up" || lane[n] === "wobble");
+  const up = PINS.filter(({ number: n }) => lane[n] === "up" || lane[n] === "wobble");
   // A strike: into the pocket, between the head pin and pin 3 (or pin 2, for a ball aimed left), as a real strike ball goes.
-  if (standing.length === 0 && falls.length === PINS.length) return { x: aim !== null && aim < -0.2 ? -POCKET_X : POCKET_X, deflect: 0 };
+  if (up.length === 0 && falls.length === PINS.length) return { x: aim !== null && aim < -0.2 ? -POCKET_X : POCKET_X, deflect: 0 };
   const want = aim === null ? null : Math.max(-1, Math.min(1, aim)) * AIM_ENTRY;
-  // `graze`: a pin it knocks over is only touched, never overlapped (a deflected ball glances off it).
-  const search = (deflects: readonly number[], graze = false) => {
-    let best = { path: { x: 0, deflect: 0 }, hits: -1, offset: Infinity };
-    for (const deflect of deflects)
-      for (let i = -8; i <= 8; i++) {
-        const path = { x: (i * PIN_SPACING) / 8, deflect };
-        if (standing.some(({ number: n }) => passGap(path, pinPosition(n).x, pinPosition(n).z) < CLEAR)) continue;
-        const hits = falls.filter(({ number: n }) => {
-          const gap = passGap(path, pinPosition(n).x, pinPosition(n).z);
-          return gap < CLEAR + 0.03 && (!graze || gap >= CLEAR);
-        }).length;
-        // Aimed: the allowed line nearest the aim that still meets a pin it knocks down.
-        // Otherwise: more pins met, then the straightest line just off the centre (the pocket).
-        const offset =
-          want !== null ? Math.abs(path.x - want) - (hits > 0 ? 10 : 0) + Math.abs(deflect) : Math.abs(Math.abs(path.x) - 0.12) + Math.abs(deflect);
-        const better = want !== null ? offset < best.offset : hits > best.hits || (hits === best.hits && offset < best.offset);
-        if (better) best = { path, hits, offset };
-      }
-    return best;
-  };
-  const straight = search([0]);
-  if (falls.length === 0 || straight.hits > 0) return straight.path;
-  return search(DEFLECTS, true).path;
+  const key = `${PINS.map(({ number: n }) => lane[n][0]).join("")}:${want}`;
+  const cached = rackPathCache.get(key);
+  if (cached) return cached;
+
+  let best: { path: RackPath; score: number[] } | null = null;
+  for (const deflect of DEFLECTS)
+    for (const x of ENTRIES) {
+      const path = { x, deflect };
+      // On the deck all the way past the back row (the ball is held off the gutter's far side).
+      if (Math.abs(pathXAt(path, DECK_END_Z)) > GUTTER_EDGE) continue;
+      // Never through a pin that stays up (a shaking pin is at most grazed).
+      if (up.some(({ number: n }) => passGap(path, pinPosition(n).x, pinPosition(n).z) < CLEAR)) continue;
+      const r = computeReactions(lane, path, false);
+      const byBall = falls.filter(({ number: n }) => r[n].byBall).length;
+      // Falling pins come first, then shaking ones; then the most pins struck by the ball itself.
+      const score = [r.unreachedFalls ?? 0, r.unreachedShakes ?? 0, -byBall, deflect === 0 ? 0 : 1, want === null ? Math.abs(Math.abs(x) - 0.12) : Math.abs(x - want), Math.abs(deflect)];
+      if (!best || lexLess(score, best.score)) best = { path, score };
+    }
+  const path = best?.path ?? { x: 0, deflect: 0 };
+  rackPathCache.set(key, path);
+  return path;
+}
+const rackPathCache = new Map<string, RackPath>();
+
+function lexLess(a: number[], b: number[]): boolean {
+  for (let i = 0; i < a.length; i++) {
+    if (Math.abs(a[i]! - b[i]!) > 1e-9) return a[i]! < b[i]!;
+  }
+  return false;
+}
+
+/** The ball's line through the rack on a fresh throw of `drug` (see rackPath). */
+export function rackPathFor(drug: DrugId, aim: number | null = null): RackPath {
+  return rackPath(rollLane(drug), aim);
+}
+
+/** The ball's line through the rack on a throw, which the pins react to (the same line the ball is drawn on). */
+export function throwPath(seed: number | null, drug: DrugId | null, aim: number | null, lane: LanePins | null): RackPath {
+  if (!drug) return { x: 0, deflect: 0 };
+  if (seed === null) return rackPath(lane ?? rollLane(drug));
+  const line = ballLineFor(seed, drug, aim, lane);
+  return { x: line.pocket, deflect: line.deflect ?? 0 };
 }
 
 /** Where the ball enters the rack on a fresh throw of `drug` (see rackPath). */
@@ -205,13 +234,20 @@ function computeBallLine(seed: number, drug: DrugId | null, aim: number | null, 
     const side = Math.abs(a) < 0.06 ? coin : Math.sign(a);
     const drift = Math.min(0.5, Math.abs(a) * 0.42 + swing);
     const path = rackPath(rack!, a);
-    return { bulge: side * drift, pocket: path.x, deflect: path.deflect, hook: 2 + rand() * 1.5 };
+    // Off the hand the way the finger went (wider the more angled the swipe), then it hooks to the rack.
+    // Swiped away from the side it must enter the rack on, it only leans that way: it never
+    // goes out one side and then right across the lane to the other.
+    const away = path.x !== 0 && side !== Math.sign(path.x);
+    const launch = path.x + side * (0.6 + Math.abs(a) * 2 + swing * 3) * (away ? Math.max(0.15, 0.4 - Math.abs(path.x) * 0.4) : 1);
+    return { bulge: side * drift, pocket: path.x, deflect: path.deflect, hook: 2 + rand() * 1.5, launch };
   }
   if (rack) {
     const path = rackPath(rack);
     // Swings out on the side it enters the rack, so it never cuts across the head pin.
     const side = path.x === 0 ? coin : Math.sign(path.x);
-    return { bulge: side * bulge, pocket: path.x, deflect: path.deflect, peak };
+    // Not swiped: off the hand almost straight at its entry point, with a little drift of its own.
+    const drift = coin * (0.15 + rand() * 0.45) * (path.x !== 0 && coin !== Math.sign(path.x) ? 0.4 : 1);
+    return { bulge: side * bulge, pocket: path.x, deflect: path.deflect, peak, launch: path.x * 1.1 + drift };
   }
   return { bulge: coin * bulge, pocket: -coin * pocket, peak }; // hooks back across into the pocket
 }
@@ -223,7 +259,31 @@ function hookShape(u: number, k: number): number {
   return (u - Math.pow(u, k + 1)) / (top * (k / (k + 1)));
 }
 
+/**
+ * A throw at the rack, down the lane: one smooth curve. It swings out to one
+ * side and back (`bulge`; later for a higher `hook` or `peak`), and reaches the
+ * front row at its entry point already heading along its line through the
+ * pins, so there is no kink where it meets them.
+ */
+function approachX(line: BallLine, u: number): number {
+  const travel = BALL_START_Z - FRONT_ROW_Z;
+  // How sharply it heads across the deck at the pins (sideways per unit of `u`).
+  const enter = (line.deflect ?? 0) * travel;
+  // Its angle off the hand (sideways per unit of `u`): by default straight at its entry point.
+  const launch = line.launch ?? line.pocket;
+  // One smooth curve (quintic Hermite): from the release on its launch angle, bending
+  // steadily to the entry point, which it reaches on the entry angle and no longer turning.
+  const u2 = u * u;
+  const u3 = u2 * u;
+  const offHand = u - 6 * u3 + 8 * u3 * u - 3 * u3 * u2;
+  const toPoint = u3 * (10 - 15 * u + 6 * u2);
+  const onAngle = u3 * (-4 + 7 * u - 3 * u2);
+  return launch * offHand + line.pocket * toPoint + enter * onAngle;
+}
+
 function lineX(line: BallLine, u: number): number {
+  // A throw at the pins: the smooth approach that meets its line through the rack.
+  if (u <= 1 && line.deflect !== undefined) return approachX(line, u);
   if (u <= 1 && line.hook) return line.bulge * hookShape(u, line.hook) + line.pocket * u * u;
   if (u <= 1) return line.bulge * Math.sin(Math.PI * Math.pow(u, line.peak ?? 1.5)) + line.pocket * u * u;
   // Through the pins: on along its line, between the pins that stay up. A ball
@@ -295,11 +355,12 @@ function pinRand(n: PinNumber, k: number): number {
 }
 
 /** How a knocked pin goes down: its own direction, push, hop and spin. */
-function knock(n: PinNumber, pathX: number) {
-  const base = fallDirection(n, pathX);
-  // Pins in the ball's path are thrown clear of it, harder and faster.
-  const inPath = inBallPath(n, pathX);
-  const turn = (pinRand(n, 1) - 0.5) * 0.7; // up to about ±20° off its main direction
+function knock(n: PinNumber, react: PinReaction) {
+  const base = react.dir;
+  // Pins the ball itself strikes are thrown clear of it, harder and faster.
+  const inPath = react.byBall;
+  const pathX = react.pathX;
+  const turn = (pinRand(n, 1) - 0.5) * (inPath ? 0.7 : 0.35); // off its main direction (less for a pin knocked by a pin)
   const c = Math.cos(turn);
   const sn = Math.sin(turn);
   const dir = { x: base.x * c - base.z * sn, z: base.x * sn + base.z * c };
@@ -316,6 +377,130 @@ function knock(n: PinNumber, pathX: number) {
 const FRICTION = 2.4; // m/s² deck friction on a sliding pin
 const SPIN_DAMP = 2.5;
 
+
+/** How a pin reacts on one throw: when it starts to move, which way, and what hit it. */
+export interface PinReaction {
+  /** Seconds after release that the pin starts to move. */
+  start: number;
+  /** The way it falls (or rocks): a unit vector on the deck. */
+  dir: { x: number; z: number };
+  /** Struck by the ball itself (kicked out hard), rather than by another pin. */
+  byBall: boolean;
+  /** The ball's line across the lane at this pin's row. */
+  pathX: number;
+}
+
+/** The ball's centre this close to a pin's centre touches it. */
+const HIT = CLEAR + 0.03;
+/** A falling pin takes out a pin standing within this distance (most of its length). */
+const KNOCK_REACH = PIN_HEIGHT * 0.95;
+/** A pin struck by a falling pin starts to move this long after the falling pin did (plus a little more the further away it is). */
+const KNOCK_DELAY = 0.1;
+const KNOCK_TRAVEL = 0.18;
+
+/** Where the ball is across the lane as it passes depth `z` on its line through the rack. */
+function pathXAt(path: RackPath, z: number): number {
+  return path.x + path.deflect * (FRONT_ROW_Z - z);
+}
+
+const unit = (x: number, z: number) => {
+  const len = Math.hypot(x, z) || 1;
+  return { x: x / len, z: z / len };
+};
+
+/**
+ * Every pin's reaction to a throw at `lane` along `path`. A pin the ball
+ * touches moves the moment the ball reaches it; a pin the ball misses is taken
+ * out by a falling neighbour (pin action): it moves just after that pin, and
+ * falls away from it. Only a pin that neither can reach falls (or shakes) as
+ * the ball passes its row — rackPath picks lines that leave none of those.
+ */
+export function rackReactions(lane: LanePins, path: RackPath, strike = false): Record<PinNumber, PinReaction> {
+  const c = reactionCache;
+  if (c && c.lane === lane && c.x === path.x && c.deflect === path.deflect && c.strike === strike) return c.out;
+  const out = computeReactions(lane, path, strike);
+  reactionCache = { lane, x: path.x, deflect: path.deflect, strike, out };
+  return out;
+}
+let reactionCache: { lane: LanePins; x: number; deflect: number; strike: boolean; out: Record<PinNumber, PinReaction> } | null = null;
+
+function computeReactions(lane: LanePins, path: RackPath, strike: boolean): Record<PinNumber, PinReaction> & { unreachedFalls?: number; unreachedShakes?: number } {
+  const out = {} as Record<PinNumber, PinReaction>;
+  const reacts = (n: PinNumber) => lane[n] === "down" || lane[n] === "wobble";
+  if (strike) {
+    for (const { number: n } of PINS) {
+      const local = pathXAt(path, pinPosition(n).z);
+      out[n] = { start: pinReactionStart(n, path.x, true), dir: fallDirection(n, local), byBall: inBallPath(n, local), pathX: local };
+    }
+    return out;
+  }
+  // The ball: every reacting pin it touches.
+  for (const { number: n } of PINS) {
+    if (!reacts(n)) continue;
+    const { x, z } = pinPosition(n);
+    const gap = passGap(path, x, z);
+    if (gap >= HIT) continue;
+    const local = pathXAt(path, z);
+    // Thrown out to the side of the ball's line and on the way it is going (along its angle through the rack).
+    const side = awayFromPath(n, local);
+    const along = unit(path.deflect, -1);
+    const dir = unit(side * -along.z + 0.45 * along.x, side * along.x + 0.45 * along.z);
+    out[n] = { start: arrivalSeconds(z + Math.sqrt(Math.max(0, HIT * HIT - gap * gap))), dir, byBall: true, pathX: local };
+  }
+  // Pin action: falling pins take out the reacting pins within reach, earliest first.
+  for (;;) {
+    let best: { n: PinNumber; from: PinNumber; t: number } | null = null;
+    for (const { number: n } of PINS) {
+      if (!reacts(n) || out[n]) continue;
+      const p = pinPosition(n);
+      for (const { number: m } of PINS) {
+        if (lane[m] !== "down" || !out[m]) continue;
+        const q = pinPosition(m);
+        const d = Math.hypot(p.x - q.x, p.z - q.z);
+        if (d > KNOCK_REACH) continue;
+        const t = out[m].start + KNOCK_DELAY + (KNOCK_TRAVEL * d) / KNOCK_REACH;
+        if (!best || t < best.t) best = { n, from: m, t };
+      }
+    }
+    if (!best) break;
+    const p = pinPosition(best.n);
+    const q = pinPosition(best.from);
+    // Away from the pin that hit it, and on back toward the pit.
+    const away = unit(p.x - q.x, p.z - q.z);
+    out[best.n] = { start: best.t, dir: unit(away.x, away.z - 0.35), byBall: false, pathX: pathXAt(path, p.z) };
+  }
+  // Everything else: as the ball passes its row. A pin that falls or shakes but
+  // that nothing reaches goes only once the first pins are hit (never before the crash).
+  const firstCrash = Math.min(...PINS.filter(({ number: n }) => lane[n] === "down" && out[n]).map(({ number: n }) => out[n].start));
+  let unreachedFalls = 0;
+  let unreachedShakes = 0;
+  for (const { number: n } of PINS) {
+    if (out[n]) continue;
+    if (lane[n] === "down") unreachedFalls++;
+    if (lane[n] === "wobble") unreachedShakes++;
+    const local = pathXAt(path, pinPosition(n).z);
+    const start = pinReactionStart(n, local);
+    out[n] = {
+      start: reacts(n) && Number.isFinite(firstCrash) ? Math.max(firstCrash + 0.12, Math.min(start, firstCrash + 0.4)) : start,
+      dir: fallDirection(n, local),
+      byBall: false,
+      pathX: local,
+    };
+  }
+  return Object.assign(out, { unreachedFalls, unreachedShakes });
+}
+
+/** Seconds after release when the ball (or a pin it sends flying) first knocks a pin down on this throw; null if none falls. */
+export function firstKnockSeconds(lane: LanePins, path: RackPath, strike = false): number | null {
+  const reactions = rackReactions(lane, path, strike);
+  const starts = PINS.filter(({ number: n }) => lane[n] === "down").map(({ number: n }) => reactions[n].start);
+  return starts.length ? Math.min(...starts) : null;
+}
+
+/** A pin's reaction on its own, with the ball on a straight line at `pathX` (no other pins considered). */
+function soloReaction(n: PinNumber, pathX = 0, strike = false): PinReaction {
+  return { start: pinReactionStart(n, pathX, strike), dir: fallDirection(n, pathX), byBall: inBallPath(n, pathX), pathX };
+}
 
 export function pinReactionStart(n: PinNumber, pathX = 0, strike = false): number {
   const { x, z } = pinPosition(n);
@@ -366,20 +551,21 @@ const ROCK_SHUFFLE = PIN_MAX_RADIUS * 0.35;
 /** The rocking ends exactly by then (seconds after the hit), upright and back on its spot. */
 const ROCK_SECONDS = 2.6;
 
-export function pinPose(n: PinNumber, falls: boolean, elapsedMs: number, wobbles = false, pathX = 0, strike = false): PinPose {
-  const u = elapsedMs / 1000 - pinReactionStart(n, pathX, strike);
+/** A pin's pose `elapsedMs` after release. `react`: how it reacts on this throw (rackReactions); by default, to a ball straight down the middle. */
+export function pinPose(n: PinNumber, falls: boolean, elapsedMs: number, wobbles = false, react: PinReaction = soloReaction(n)): PinPose {
+  const u = elapsedMs / 1000 - react.start;
   const rest: PinPose = { dx: 0, dz: 0, lift: 0, axisX: 1, axisZ: 0, angle: 0, yaw: 0, opacity: 1, dim: 0 };
   if (u <= 0) return rest;
 
   if (!falls && wobbles) {
     // Tip toward the fall direction, rock back past upright, and settle.
     // The swings shrink to nothing well before the result is shown.
-    const dir = fallDirection(n, pathX);
+    const dir = react.dir;
     if (!(u < ROCK_SECONDS)) return { ...rest, dim: 1 };
     const fade = Math.exp(-ROCK_DECAY * u) * (1 - u / ROCK_SECONDS);
     const angle = ROCK_ANGLE * fade * Math.sin(2 * Math.PI * ROCK_HZ * u);
-    // The base chatters on the deck as it rocks, back and forth along the hit.
-    const shuffle = ROCK_SHUFFLE * fade * Math.sin(2 * Math.PI * ROCK_HZ * 2 * u);
+    // The base chatters on the deck as it rocks, pushed along the hit (never back into whatever hit it).
+    const shuffle = ROCK_SHUFFLE * fade * Math.abs(Math.sin(2 * Math.PI * ROCK_HZ * 2 * u));
     return {
       ...rest,
       dx: dir.x * shuffle,
@@ -398,7 +584,7 @@ export function pinPose(n: PinNumber, falls: boolean, elapsedMs: number, wobbles
     return { ...rest, dim: clamp01(u / 0.45) };
   }
 
-  const k = knock(n, pathX);
+  const k = knock(n, react);
   const t = Number.isFinite(u) ? Math.min(u, 3) : 3;
   const tipped = clamp01(t / k.tip);
   const landed = Math.max(0, t - k.tip);
@@ -507,8 +693,10 @@ function swept(n: PinNumber, rest: PinPose, s: number): PinPose {
 }
 
 export interface LanePoseContext {
-  /** The ball's line through the rack (rackLineX). */
-  pathX: number;
+  /** The ball's line through the rack (rackPathFor, or the throw's ballLineFor). */
+  path: RackPath;
+  /** Every pin's state on this throw (which fall, shake or stay up); null before any throw. */
+  lane: LanePins | null;
   /** Every pin falls on this throw. */
   strike: boolean;
   /** This throw is a second throw: the pinsetter clears the deadwood first. */
@@ -518,9 +706,10 @@ export interface LanePoseContext {
 }
 
 export function lanePinPose(n: PinNumber, status: LanePin, phase: GamePhase, elapsedMs: number, ctx: LanePoseContext): PinPose {
-  const { pathX, strike, sweeping, resetSinceMs } = ctx;
+  const { path, lane, strike, sweeping, resetSinceMs } = ctx;
+  const react = lane ? rackReactions(lane, path, strike)[n] : soloReaction(n, path.x, strike);
   if (phase === "transition") {
-    const before = status === "gone" || status === "down" ? finalPinPose(n, true, false, pathX) : UPRIGHT;
+    const before = status === "gone" || status === "down" ? finalPinPose(n, true, false, react) : UPRIGHT;
     if (resetSinceMs === null || resetSinceMs < 0) return before;
     const s = resetSinceMs / 1000;
     const fresh = freshRackLift(s);
@@ -530,12 +719,12 @@ export function lanePinPose(n: PinNumber, status: LanePin, phase: GamePhase, ela
   const s = elapsedMs / 1000;
   // Knocked down by an earlier throw of the frame: cleared away, so the second
   // throw is at the standing pins only (client request).
-  if (status === "gone") return sweeping && phase === "rolling" ? swept(n, finalPinPose(n, true, false, pathX), s) : HIDDEN;
-  const pose = pinPose(n, status === "down", elapsedMs, status === "wobble", pathX, strike);
+  if (status === "gone") return sweeping && phase === "rolling" ? swept(n, finalPinPose(n, true, false, soloReaction(n, path.x)), s) : HIDDEN;
+  const pose = pinPose(n, status === "down", elapsedMs, status === "wobble", react);
   return sweeping && phase === "rolling" ? { ...pose, lift: pose.lift + tableLift(s) } : pose;
 }
 
 /** Final pose used for the result state and reduced-motion rolls. */
-export function finalPinPose(n: PinNumber, falls: boolean, wobbles = false, pathX = 0, strike = false): PinPose {
-  return pinPose(n, falls, Number.POSITIVE_INFINITY, wobbles, pathX, strike);
+export function finalPinPose(n: PinNumber, falls: boolean, wobbles = false, react?: PinReaction): PinPose {
+  return pinPose(n, falls, Number.POSITIVE_INFINITY, wobbles, react);
 }

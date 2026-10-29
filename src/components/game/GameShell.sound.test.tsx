@@ -34,7 +34,7 @@ describe("sounds", () => {
     wait(ROLL_TOTAL_MS);
     expect(playEnding).toHaveBeenCalledTimes(1);
     expect(playEnding).toHaveBeenLastCalledWith("lost");
-    fireEvent.click(button(/^2nd attempt/i));
+    fireEvent.click(button(/^Second chance/i));
     fireEvent.click(button(/^Roll the ball/), { detail: 0 });
     wait(ROLL_TOTAL_MS);
     wait(RACK_RESET_MS);

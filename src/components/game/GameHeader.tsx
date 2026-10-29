@@ -46,7 +46,7 @@ export function GameHeader({
           >
             {title}
           </h1>
-          {subtitle && <p className="mt-0.5 truncate text-sm font-semibold text-white sm:text-base kiosk:text-[clamp(1rem,1.9vh,1.3rem)]">{subtitle}</p>}
+          {subtitle && <p className="mt-0.5 line-clamp-2 text-sm lg:truncate font-semibold text-white sm:text-base kiosk:text-[clamp(1rem,1.9vh,1.3rem)]">{subtitle}</p>}
         </div>
         <div className="flex items-center justify-end gap-2 sm:gap-3">
           <SoundToggle on={soundOn} onChange={onSoundChange} />

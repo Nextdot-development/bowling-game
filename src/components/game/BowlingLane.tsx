@@ -114,7 +114,8 @@ export function BowlingLane() {
           map={wood}
           mirror={0.55}
           blur={[260, 90]}
-          resolution={512}
+          // The reflection is blurred, so a smaller texture looks the same and costs a quarter as much each frame.
+          resolution={256}
           mixBlur={1}
           mixStrength={1.1}
           roughness={0.32}

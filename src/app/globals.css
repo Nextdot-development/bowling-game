@@ -123,7 +123,7 @@
   }
   /* Pop-up titles: big, tilted gold lettering with a thick navy outline and a deep drop. */
   .game-panel-title {
-    @apply font-display text-[2.1rem] uppercase leading-none sm:text-6xl;
+    @apply font-display text-[2.1rem] uppercase leading-none sm:text-6xl short:text-4xl;
     letter-spacing: 0.01em;
     color: rgb(var(--brand-gold-rgb));
     -webkit-text-stroke: 0.07em color-mix(in srgb, rgb(var(--brand-navy-rgb)) 60%, black);
@@ -784,7 +784,7 @@
 @layer components {
   /* "Good attempt!": the big score in a gold-framed card. */
   .result-score {
-    @apply flex flex-col items-center rounded-3xl px-7 py-4 kiosk:px-[clamp(1.6rem,3.6vh,2.4rem)] kiosk:py-[clamp(0.9rem,2vh,1.3rem)];
+    @apply flex flex-col items-center rounded-3xl px-7 py-4 short:px-5 short:py-2 kiosk:px-[clamp(1.6rem,3.6vh,2.4rem)] kiosk:py-[clamp(0.9rem,2vh,1.3rem)];
     background: color-mix(in srgb, rgb(var(--brand-navy-rgb)) 60%, black);
     box-shadow: 0 0 0 3px rgb(var(--brand-gold-rgb)), inset 0 -5px 0 rgb(0 0 0 / 0.25);
   }

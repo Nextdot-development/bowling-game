@@ -54,15 +54,15 @@ export const PIN_PROFILE: readonly (readonly [number, number])[] = [
 ];
 
 /** The head pin (pin 1), the point of the triangle nearest the bowler. */
-export const FRONT_ROW_Z = -11;
+export const FRONT_ROW_Z = -12.5;
 /**
  * Depth between rows. Deeper than an equilateral rack (0.40), so that from the
  * bowler's end each row stands clearly behind the one in front, as the rack
  * looks from a raised view of a real lane.
  */
 export const ROW_GAP = 0.6;
-export const DECK_END_Z = -13.15;
-export const PIT_BACK_Z = -13.75;
+export const DECK_END_Z = -14.65;
+export const PIT_BACK_Z = -15.25;
 
 export const CAMERA = {
   // Low and a little further back, zoomed in: big pins near the top of the

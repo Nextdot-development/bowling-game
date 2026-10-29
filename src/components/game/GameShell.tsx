@@ -16,7 +16,7 @@ import {
 } from "@/data/gameData";
 import { useGameState } from "@/hooks/useGameState";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
-import { joinPinNumbers, laneBefore, rollLane, richToPlain, secondThrowLane } from "@/lib/gameLogic";
+import { joinPinNumbers, laneBefore, richToPlain, rollingLane } from "@/lib/gameLogic";
 import { sessionStage } from "@/lib/gameReducer";
 import { validateOutcomeMatrix } from "@/lib/outcomeValidation";
 import type { LanePin, LanePins, Pin, SessionStage } from "@/types/game";
@@ -87,10 +87,8 @@ export function GameShell({ force2D = false }: GameShellProps) {
   // up; on the second throw, what the first left (its fallen pins gone).
   const lane: LanePins = useMemo(() => {
     if (state.phase === "rolling" && state.selectedDrug) {
-      if (state.frame === 1 && state.attempts === 2 && state.firstThrow) return secondThrowLane(state.firstThrow.lane, state.selectedDrug);
       // First throw: the down pins fall; the shaking pins only shake on the second throw, so here they stand still.
-      const first = rollLane(state.selectedDrug);
-      return state.frame === 1 ? (Object.fromEntries(Object.entries(first).map(([n, s]) => [n, s === "wobble" ? "up" : s])) as LanePins) : first;
+      return rollingLane(state.selectedDrug, state.frame, state.frame === 1 && state.attempts === 2 ? state.firstThrow?.lane ?? null : null);
     }
     if (state.phase === "result" && state.result) return state.result.lane;
     // Ready for the second throw: the rack as the first throw left it (fallen pins lying where they fell).
@@ -238,7 +236,11 @@ export function GameShell({ force2D = false }: GameShellProps) {
                 {stage === "TRANSITION" && (
                   // Low on the lane, between the side panels, so the rack reset stays in view above it.
                   <div className="order-first kiosk:absolute kiosk:bottom-[1.5rem] kiosk:left-1/2 kiosk:z-20 kiosk:w-[min(52rem,calc(100%-2*(min(24rem,25%)+2.75rem)))] kiosk:-translate-x-1/2">
-                    <TransitionCard score={frame1Score} onContinue={game.startFrame2} />
+                    <TransitionCard
+                      score={frame1Score}
+                      standing={(state.secondThrow ?? state.firstThrow)?.standing ?? []}
+                      onContinue={game.startFrame2}
+                    />
                   </div>
                 )}
                 <BallRack

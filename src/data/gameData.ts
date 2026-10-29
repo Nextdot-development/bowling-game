@@ -55,17 +55,17 @@ export const PINS: readonly Pin[] = [
   { number: 4, label: "Lung conc.", name: ["High Lung Concentration"], outcome: { amoxiclavAzithro: W, amoxiclavClarithro: D, miqnaf: D } },
   { number: 5, label: "QT prolongation", name: ["QT Prolongation"], outcome: { amoxiclavAzithro: S, amoxiclavClarithro: S, miqnaf: D } },
   { number: 6, label: "Atypicals", name: ["Atypical Coverage"], outcome: { amoxiclavAzithro: D, amoxiclavClarithro: D2, miqnaf: D } },
-  { number: 7, label: "Anti-inflam.", name: ["Anti-Inflammatory / Immunomodulatory Activity"], outcome: { amoxiclavAzithro: D, amoxiclavClarithro: D, miqnaf: D } },
+  { number: 7, label: "Anti-inflam.", name: ["Anti-Inflammatory / Immunomodulatory Activity"], outcome: { amoxiclavAzithro: D2, amoxiclavClarithro: D, miqnaf: D } },
   { number: 8, label: "AMR", name: ["Managing AMR"], outcome: { amoxiclavAzithro: S, amoxiclavClarithro: S, miqnaf: D } },
   { number: 9, label: "Low DDI", name: ["Low Drug-Drug Interaction"], outcome: { amoxiclavAzithro: D, amoxiclavClarithro: D, miqnaf: D } },
-  { number: 10, label: "Post-antibiotic", name: ["Post Antibiotic Effect"], outcome: { amoxiclavAzithro: D2, amoxiclavClarithro: D2, miqnaf: D } },
+  { number: 10, label: "Post-antibiotic", name: ["Post Antibiotic Effect"], outcome: { amoxiclavAzithro: D, amoxiclavClarithro: D2, miqnaf: D } },
 ];
 
 /**
  * Scores as supplied, configured explicitly (never calculated from the pins).
  * Client update of 2026-10-28: a point per pin down, plus half a point per
  * shaking pin after the second throw. Amoxiclav + Azithromycin: 4 down, then
- * 1 more with 2 shaking, so 4/10 then 6/10. Amoxiclav + Clarithromycin: 5 down,
+ * 1 more with 2 shaking, so 4/10 then 6/10 (pins 2, 6, 9 and 10, then 7). Amoxiclav + Clarithromycin: 5 down,
  * then 2 more, none shaking, so 5/10 then 7/10.
  */
 export const FIRST_THROW_SCORE: Readonly<Record<DrugId, number | null>> = {
@@ -85,7 +85,7 @@ export const SCORE_OUT_OF = 10;
 export const FIRST_THROW_COPY = {
   heading: "Good attempt!",
   body: "However, several treatment barriers remain standing.",
-  button: "2nd attempt",
+  button: "Second chance",
 } as const;
 
 /** Between the frames. */

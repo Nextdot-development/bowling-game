@@ -186,7 +186,7 @@ export function useGameAudio(enabled: boolean) {
 
   /** Schedules the roll's sounds on the audio clock, in sync with the animation. */
   const playRoll = useCallback(
-    async (plan: { pinsDown: number; totalPins: number; instant?: boolean }) => {
+    async (plan: { pinsDown: number; totalPins: number; instant?: boolean; hitAt?: number | null }) => {
       if (!enabled) return;
       const ctx = ensureContext();
       const master = masterRef.current;
@@ -195,7 +195,7 @@ export function useGameAudio(enabled: boolean) {
       await loadingRef.current;
       // If decoding took a moment, keep the timeline anchored to when the roll began.
       const t0 = requestedAt + 0.03;
-      for (const cue of buildSoundCues(plan.pinsDown, plan.totalPins, plan.instant)) {
+      for (const cue of buildSoundCues(plan.pinsDown, plan.totalPins, plan.instant, plan.hitAt ?? undefined)) {
         const buffer = buffersRef.current[cue.sound];
         if (!buffer) continue;
         const onset = SOUND_ONSETS[cue.sound];

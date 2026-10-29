@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { CONVENTIONAL_BALLS, NOVEL_BALL, PINS } from "@/data/gameData";
-import { rollLane, secondThrowLane } from "@/lib/gameLogic";
+import { rollingLane, rollLane, secondThrowLane } from "@/lib/gameLogic";
 import { BALL_RADIUS, BALL_START_Z, FRONT_ROW_Z, PIN_HEIGHT, PIN_MAX_RADIUS, pinPosition } from "@/lib/laneLayout";
-import { AIM_BLEND_MS, AIM_REACH, aimOffset, ballLineFor, ballPose, finalPinPose, lanePinPose, pinPose, pinReactionStart, rackLineX, SETTER } from "@/lib/rollAnimation";
+import { AIM_BLEND_MS, AIM_REACH, aimOffset, ballLineFor, ballPose, finalPinPose, firstKnockSeconds, lanePinPose, pinPose, pinReactionStart, rackLineX, rackPathFor, rackReactions, SETTER, throwPath } from "@/lib/rollAnimation";
 import { ROLL_TOTAL_MS } from "@/lib/timing";
 import { BALL_TRAVEL_MS } from "@/lib/timing";
 import type { LanePins, PinNumber } from "@/types/game";
@@ -42,11 +42,12 @@ describe("roll animation", () => {
     for (const n of ALL_PINS) expect(start(n) * 1000 + 1300).toBeLessThanOrEqual(ROLL_TOTAL_MS);
   });
 
-  it("follows the swipe: left goes out left, right goes out right, straight stays near the middle", () => {
+  it("follows the swipe: it sets off the way the finger went, then hooks to the rack without crossing back", () => {
     for (const drug of CONVENTIONAL_BALLS) {
-      const mid = (aim: number) => ballPose(BALL_TRAVEL_MS * 0.6, ballLineFor(777.7, drug, aim)).x;
-      expect(mid(-1)).toBeLessThan(mid(0) - 0.15);
-      expect(mid(1)).toBeGreaterThan(mid(0) + 0.15);
+      // Its heading off the hand: further left for a left swipe, further right for a right one.
+      const offHand = (aim: number) => ballPose(BALL_TRAVEL_MS * 0.1, ballLineFor(777.7, drug, aim)).heading;
+      expect(offHand(-1)).toBeLessThan(offHand(0) - 0.02);
+      expect(offHand(1)).toBeGreaterThan(offHand(0) + 0.02);
       // Wherever it was aimed, it reaches its line through the rack at the head pin.
       for (const aim of [-1, -0.4, 0, 0.4, 1]) expect(ballPose(BALL_TRAVEL_MS, ballLineFor(777.7, drug, aim)).x).toBeCloseTo(rackLineX(drug, aim), 5);
     }
@@ -56,10 +57,10 @@ describe("roll animation", () => {
     for (const drug of CONVENTIONAL_BALLS) {
       const path = (seed: number) => [0.3, 0.5, 0.7, 0.85].map((f) => ballPose(BALL_TRAVEL_MS * f, ballLineFor(seed, drug, 0)).x);
       const throws = [101.2, 2002.7, 33333.3, 48211.9, 777.7, 90210.4].map(path);
-      // Almost every throw takes a line of its own, and together they spread across the lane.
-      expect(new Set(throws.map((t) => t.map((x) => x.toFixed(2)).join())).size).toBeGreaterThanOrEqual(5);
+      // Throws take lines of their own (a little more or less swing), always on a natural curve to the same rack line.
+      expect(new Set(throws.map((t) => t.map((x) => x.toFixed(2)).join())).size).toBeGreaterThanOrEqual(3);
       const mids = throws.map((t) => t[1]!);
-      expect(Math.max(...mids) - Math.min(...mids)).toBeGreaterThan(0.15);
+      expect(Math.max(...mids) - Math.min(...mids)).toBeGreaterThan(0.03);
     }
   });
 
@@ -104,12 +105,12 @@ describe("roll animation", () => {
     for (const player of CONVENTIONAL_BALLS) {
       for (const lane of throwsFor(player)) {
         const line = ballLineFor(2002.7, player, null, lane);
-        const pathX = line.pocket; // each throw's own line (the pins fall away from it)
+        const path = throwPath(2002.7, player, null, lane); // each throw's own line (the pins fall away from it)
         for (let ms = BALL_TRAVEL_MS - 200; ms <= ROLL_TOTAL_MS; ms += 10) {
           const b = ballPose(ms, line);
           if (!b.visible || b.y < 0) continue;
           for (const { number: n } of PINS) {
-            const pose = lanePinPose(n, lane[n], "rolling", ms, { pathX, strike: false, sweeping: false, resetSinceMs: null });
+            const pose = lanePinPose(n, lane[n], "rolling", ms, { path, lane, strike: false, sweeping: false, resetSinceMs: null });
             if (pose.opacity < 0.05) continue;
             const p = pinPosition(n);
             // The pin's axis from its base, tipped and then turned about the vertical.
@@ -161,7 +162,8 @@ describe("roll animation", () => {
   });
 
   it("the strike ball goes into the pocket and never passes through a pin", () => {
-    const pathX = rackLineX(NOVEL_BALL);
+    const path = rackPathFor(NOVEL_BALL);
+    const pathX = path.x;
     expect(pathX).toBeGreaterThan(0.05); // the pocket, not straight through the head pin
     expect(pathX).toBeLessThan(0.2);
     const lane = rollLane(NOVEL_BALL);
@@ -171,7 +173,7 @@ describe("roll animation", () => {
       const b = ballPose(ms, line);
       if (!b.visible || b.y < 0) continue;
       for (const { number: n } of PINS) {
-        const pose = lanePinPose(n, lane[n], "rolling", ms, { pathX, strike: true, sweeping: false, resetSinceMs: null });
+        const pose = lanePinPose(n, lane[n], "rolling", ms, { path, lane, strike: true, sweeping: false, resetSinceMs: null });
         if (pose.opacity < 0.05 || pose.lift > 2 * BALL_RADIUS) continue;
         const p = pinPosition(n);
         expect(Math.hypot(b.x - (p.x + pose.dx), b.z - (p.z + pose.dz))).toBeGreaterThanOrEqual(clear * 0.95); // touching (the hit) is fine; passing through is not
@@ -183,8 +185,7 @@ describe("roll animation", () => {
     for (const drug of CONVENTIONAL_BALLS) {
       const first = rollLane(drug);
       const lane = secondThrowLane(first, drug);
-      const line = ballLineFor(48211.9, drug, 0.3, lane);
-      const ctx = { pathX: line.pocket, strike: false, sweeping: false, resetSinceMs: null };
+      const ctx = { path: throwPath(48211.9, drug, 0.3, lane), lane, strike: false, sweeping: false, resetSinceMs: null };
       for (const n of ALL_PINS) {
         const atStart = lanePinPose(n, lane[n], "rolling", 0, ctx);
         const end = lanePinPose(n, lane[n], "rolling", ROLL_TOTAL_MS, ctx);
@@ -213,11 +214,56 @@ describe("roll animation", () => {
 
   it("between frames the deck is swept, then a fresh rack of ten is lowered into place", () => {
     const lane = secondThrowLane(rollLane("amoxiclavClarithro"), "amoxiclavClarithro");
-    const ctx = (since: number | null) => ({ pathX: 0, strike: false, sweeping: false, resetSinceMs: since });
+    const ctx = (since: number | null) => ({ path: { x: 0, deflect: 0 }, lane, strike: false, sweeping: false, resetSinceMs: since });
     for (const n of ALL_PINS) {
       expect(lanePinPose(n, lane[n], "transition", 0, ctx((SETTER.swept + 0.02) * 1000)).opacity).toBe(0); // swept
       expect(lanePinPose(n, lane[n], "transition", 0, ctx((SETTER.rackSet + 0.05) * 1000))).toMatchObject({ opacity: 1, lift: 0, angle: 0 });
     }
+  });
+
+  // Every throw as the lane shows it: Frame 1's first throw (shaking pins still), then the second.
+  const shownThrows = (drug: (typeof CONVENTIONAL_BALLS)[number]) => [rollingLane(drug, 1, null), rollingLane(drug, 1, rollLane(drug))];
+  /** Pins that fall or shake on `lane` but that neither the ball nor a pin falling before them comes near. */
+  const unreached = (lane: LanePins, path: ReturnType<typeof throwPath>) => {
+    const r = rackReactions(lane, path);
+    return ALL_PINS.filter((n) => {
+      if (lane[n] !== "down" && lane[n] !== "wobble") return false;
+      if (r[n].byBall) return false;
+      const p = pinPosition(n);
+      return !ALL_PINS.some((m) => m !== n && lane[m] === "down" && r[m].start < r[n].start && Math.hypot(pinPosition(m).x - p.x, pinPosition(m).z - p.z) <= PIN_HEIGHT * 0.95);
+    });
+  };
+
+  it("sends the ball to the pins that fall: each is struck by the ball, or by a pin it sends flying", () => {
+    // What the supplied outcomes allow on a natural path: Azithromycin's pin 2 falls while 1, 3, 4 and 5
+    // around it stay up, so nothing can reach it; its shaking pin 1 is across the rack from pin 7; and
+    // Clarithromycin's pin 9 is on the far side of 3, 5 and 8 from the pins its first throw takes.
+    const expected: Record<string, PinNumber[][]> = { amoxiclavClarithro: [[9], []], amoxiclavAzithro: [[2], [1]] };
+    for (const drug of CONVENTIONAL_BALLS)
+      shownThrows(drug).forEach((lane, i) => {
+        for (const aim of [null, -1, -0.5, 0, 0.5, 1]) {
+          const path = throwPath(48211.9, drug, aim, lane);
+          expect(unreached(lane, path)).toEqual(expected[drug]![i]);
+          // The ball itself always strikes a pin that falls.
+          expect(ALL_PINS.some((n) => lane[n] === "down" && rackReactions(lane, path)[n].byBall)).toBe(true);
+        }
+      });
+  });
+
+  it("the crash is heard when the first pin is actually hit, never before", () => {
+    for (const drug of CONVENTIONAL_BALLS)
+      for (const lane of shownThrows(drug))
+        for (const aim of [null, -1, 0, 1]) {
+          const path = throwPath(48211.9, drug, aim, lane);
+          const r = rackReactions(lane, path);
+          const hit = firstKnockSeconds(lane, path)!;
+          expect(hit).toBe(Math.min(...ALL_PINS.filter((n) => lane[n] === "down").map((n) => r[n].start)));
+          // No falling pin moves before the crash, and the first one is moved by the ball itself.
+          const first = ALL_PINS.find((n) => lane[n] === "down" && r[n].start === hit)!;
+          expect(r[first].byBall).toBe(true);
+          const pose = lanePinPose(first, "down", "rolling", hit * 1000 - 20, { path, lane, strike: false, sweeping: false, resetSinceMs: null });
+          expect(pose.angle).toBe(0);
+        }
   });
 
   it("a strike goes off almost all at once", () => {

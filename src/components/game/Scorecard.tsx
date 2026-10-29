@@ -7,7 +7,7 @@ import { DRUGS, SCORE_OUT_OF, SCORECARD_COPY, WHY_MIQNAF } from "@/data/gameData
 import type { DrugId } from "@/types/game";
 import { GamePanel } from "./GamePanel";
 
-/** "Scan to know more": the link, and its QR code (public/brand). */
+/** "Prescribing Information": the link, and its QR code (public/brand). */
 const MORE_URL = "https://qrco.de/bfXXNu";
 const QR_SRC = "/brand/nafithromycin-qr.svg";
 
@@ -32,7 +32,7 @@ export function Scorecard({ open, name, therapy, frame1Score, frame2Score, onCon
     if (open) button.current?.focus();
   }, [open]);
 
-  const score = "font-display text-3xl sm:text-4xl kiosk:text-[clamp(2.2rem,4.2vh,3rem)]";
+  const score = "whitespace-nowrap font-display text-2xl sm:text-4xl kiosk:text-[clamp(2.2rem,4.2vh,3rem)]";
 
   return (
     <AnimatePresence>
@@ -65,7 +65,7 @@ export function Scorecard({ open, name, therapy, frame1Score, frame2Score, onCon
                 <tr className="score-monitor-row">
                   <td className="px-3 py-3 sm:px-5 kiosk:py-[clamp(0.7rem,1.8vh,1.1rem)]">
                     {/* The therapy thrown, by name only. */}
-                    {therapy && <span className="block font-display text-lg uppercase tracking-wide sm:text-xl kiosk:text-[1.5rem]">{DRUGS[therapy].name}</span>}
+                    {therapy && <span className="block font-display text-base uppercase tracking-wide sm:text-xl kiosk:text-[1.5rem]">{DRUGS[therapy].name}</span>}
                   </td>
                   <td className="score-monitor-total">
                     <span className={score}>{frame1Score === null ? "–" : `${frame1Score}/${SCORE_OUT_OF}`}</span>
@@ -73,7 +73,7 @@ export function Scorecard({ open, name, therapy, frame1Score, frame2Score, onCon
                 </tr>
                 <tr className="score-monitor-row score-monitor-lit">
                   <td className="px-3 py-3 sm:px-5 kiosk:py-[clamp(0.7rem,1.8vh,1.1rem)]">
-                    <span className="block font-display text-lg uppercase tracking-wide sm:text-xl kiosk:text-[1.5rem]">{SCORECARD_COPY.frame2Therapy}</span>
+                    <span className="block font-display text-base uppercase tracking-wide sm:text-xl kiosk:text-[1.5rem]">{SCORECARD_COPY.frame2Therapy}</span>
                   </td>
                   <td className="score-monitor-total">
                     <span className={score}>
@@ -104,18 +104,18 @@ export function Scorecard({ open, name, therapy, frame1Score, frame2Score, onCon
                   </li>
                 ))}
               </ul>
-              {/* "Scan to know more" on its own row, below the three points. */}
+              {/* "Prescribing Information" on its own row, below the three points. */}
               {!qrMissing && (
                 <div className="mx-auto mt-3 flex w-fit items-center gap-4 rounded-2xl px-4 py-2.5 ring-2 ring-brand-gold/55 short:mt-1.5 short:py-1.5 kiosk:mt-[clamp(0.7rem,1.6vh,1rem)] kiosk:gap-[1.25rem] kiosk:px-[1.2rem]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={QR_SRC}
-                    alt="QR code: scan to know more about Nafithromycin"
+                    alt="QR code: Nafithromycin prescribing information"
                     onError={() => setQrMissing(true)}
                     className="h-20 w-20 rounded-lg bg-white p-1 short:h-14 short:w-14 kiosk:h-[clamp(4rem,8vh,5.6rem)] kiosk:w-[clamp(4rem,8vh,5.6rem)]"
                   />
                   <div className="flex flex-col items-start text-left">
-                    <span className="why-card-title">Scan to know more</span>
+                    <span className="why-card-title">Prescribing Information</span>
                     <a href={MORE_URL} target="_blank" rel="noopener noreferrer" data-sound="none" className="mt-1 text-sm font-semibold text-white/85 underline underline-offset-2 kiosk:text-[clamp(0.85rem,1.6vh,1.05rem)]">
                       {MORE_URL.replace("https://", "")}
                     </a>

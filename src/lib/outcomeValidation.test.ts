@@ -41,7 +41,7 @@ describe("outcome matrix", () => {
   });
 
   it.each([
-    ["amoxiclavAzithro", [2, 6, 7, 9], [10], [1, 4], [3, 5, 8]],
+    ["amoxiclavAzithro", [2, 6, 9, 10], [7], [1, 4], [3, 5, 8]],
     ["amoxiclavClarithro", [1, 2, 4, 7, 9], [6, 10], [], [3, 5, 8]],
     ["miqnaf", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], [], [], []],
   ] as const)("%s: first throw down %j, second throw down %j, shaking %j, standing %j (as supplied)", (drug, down, second, shaking, standing) => {

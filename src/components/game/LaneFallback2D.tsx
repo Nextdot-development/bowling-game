@@ -20,7 +20,7 @@ import {
   pinPosition,
 } from "@/lib/laneLayout";
 import { createProjector, type Projector } from "@/lib/projection";
-import { ballLineFor, ballPose, fallDirection, lanePinPose, rackLineX, STRAIGHT_LINE } from "@/lib/rollAnimation";
+import { ballLineFor, ballPose, lanePinPose, STRAIGHT_LINE, throwPath } from "@/lib/rollAnimation";
 import { useElementSize } from "@/hooks/useElementSize";
 import type { BowlingSceneProps } from "./BowlingScene";
 
@@ -84,7 +84,7 @@ export function LaneFallback2D({
 
       const line = lineSeed === null ? STRAIGHT_LINE : ballLineFor(lineSeed, lineDrug, lineAim, lane);
       const b = ballPose(elapsed, line);
-      const pathX = lineDrug ? (lineSeed === null ? rackLineX(lineDrug) : line.pocket) : 0;
+      const path = throwPath(lineSeed, lineDrug, lineAim, lane);
       const bc = project(b.x, b.y, b.z);
       const br = Math.abs(project(b.x, b.y + BALL_RADIUS, b.z).y - bc.y);
       if (ballRef.current) {
@@ -98,13 +98,15 @@ export function LaneFallback2D({
         const { x, z } = pinPosition(pin.number);
         const now = performance.now();
         const pose = lanePinPose(pin.number, lane[pin.number], phase, elapsed, {
-          pathX,
+          path,
+          lane,
           strike: Object.values(lane).every((s) => s === "down"),
           sweeping: false,
           resetSinceMs: rackResetAt === null ? null : now - rackResetAt,
         });
         const base = project(x + pose.dx, 0, z + pose.dz);
-        const dir = fallDirection(pin.number, pathX);
+        // The way it is tipping (axis = up × direction).
+        const dir = { x: -pose.axisZ, z: pose.axisX };
         const rot = (pose.angle * 180) / Math.PI * (pose.dim > 0 || !falls(pin.number) ? 1 : dir.x);
         const squash = 1 - 0.7 * Math.sin(pose.angle) * Math.abs(dir.z) * (falls(pin.number) ? 1 : 0);
         g.setAttribute("transform", `translate(${base.x} ${base.y}) rotate(${rot.toFixed(2)}) scale(1 ${squash.toFixed(3)})`);

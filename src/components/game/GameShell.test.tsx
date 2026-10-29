@@ -49,7 +49,7 @@ const throwFromLane = () => fireEvent.click(button(/^Roll the ball/), { detail: 
 function frame1() {
   throwFromLane();
   wait(ROLL_TOTAL_MS);
-  click(button(/^2nd attempt/i));
+  click(button(/^Second chance/i));
   throwFromLane();
   wait(ROLL_TOTAL_MS);
 }
@@ -83,7 +83,7 @@ describe("GameShell", () => {
     throwFromLane();
     wait(ROLL_TOTAL_MS);
     expect(disclaimer()).toBeVisible(); // Frame 1 result
-    click(button(/^2nd attempt/i));
+    click(button(/^Second chance/i));
     expect(disclaimer()).toBeVisible(); // second throw ready
     throwFromLane();
     wait(ROLL_TOTAL_MS);
@@ -179,7 +179,7 @@ describe("GameShell", () => {
     expect(r).toHaveTextContent("However, several treatment barriers remain standing.");
     expect(r).not.toHaveTextContent("Would you like another chance?");
 
-    click(within(r).getByRole("button", { name: /^2nd attempt/i }));
+    click(within(r).getByRole("button", { name: /^Second chance/i }));
     // The ball is handed back: nothing rolls until the doctor throws it.
     expect(screen.getByRole("heading", { name: "Second Throw" })).toBeInTheDocument();
     expect(screen.getByRole("status")).not.toHaveTextContent(/rolling/);
@@ -191,6 +191,14 @@ describe("GameShell", () => {
     const t = screen.getByRole("region", { name: "Good Try" });
     expect(t).toHaveTextContent("Despite two attempts, several CABP treatment barriers are still standing.");
     expect(t).toHaveTextContent("6/10");
+    // The barriers still up after both throws (the two shaking pins stayed up), by name.
+    expect(within(within(t).getByRole("list", { name: "Still standing" })).getAllByRole("listitem").map((l) => l.textContent)).toEqual([
+      "1Susceptibility Vs CABP Pathogens",
+      "3Patient Compliance (Dose Frequency)",
+      "4High Lung Concentration",
+      "5QT Prolongation",
+      "8Managing AMR",
+    ]);
     expect(t).toHaveTextContent("A fresh rack of treatment challenges is now set.");
     expect(t).toHaveTextContent("Let's see how a novel therapy performs.");
   });
@@ -200,7 +208,7 @@ describe("GameShell", () => {
     throwFromLane();
     wait(ROLL_TOTAL_MS);
     const r = screen.getByRole("dialog", { name: "Good attempt!" });
-    expect(within(r).getAllByRole("button").map((b) => b.textContent?.trim())).toEqual(["2nd attempt"]);
+    expect(within(r).getAllByRole("button").map((b) => b.textContent?.trim())).toEqual(["Second chance"]);
   });
 
   it("Scenario B: 5/10 on the first throw, then 7/10 with two more down and none shaking", () => {
@@ -220,7 +228,7 @@ describe("GameShell", () => {
       "10Post Antibiotic Effect",
     ]);
     // The second throw knocks down pins 6 and 10.
-    click(within(r).getByRole("button", { name: /^2nd attempt/i }));
+    click(within(r).getByRole("button", { name: /^Second chance/i }));
     throwFromLane();
     wait(ROLL_TOTAL_MS);
     expect(screen.getByRole("region", { name: "Good Try" })).toHaveTextContent("7/10");
@@ -279,11 +287,11 @@ describe("GameShell", () => {
     throwFromLane();
     wait(ROLL_TOTAL_MS);
     expect(screen.queryByRole("region", { name: "Choose your therapy" })).not.toBeInTheDocument();
-    click(button(/^2nd attempt/i));
+    click(button(/^Second chance/i));
     throwFromLane();
     wait(ROLL_TOTAL_MS);
     // A third throw is refused, even from a pop-up still fading out.
-    const leftover = screen.queryByRole("button", { name: /^2nd attempt/i });
+    const leftover = screen.queryByRole("button", { name: /^Second chance/i });
     if (leftover) click(leftover);
     expect(screen.getByRole("region", { name: "Good Try" })).toBeInTheDocument();
     expect(screen.getByRole("status")).not.toHaveTextContent(/rolling/);
@@ -303,7 +311,7 @@ describe("GameShell", () => {
     startBowling(CLARI);
     throwFromLane();
     expect(screen.getByRole("status")).toHaveTextContent("Frame 1, Amoxiclav + Clarithromycin: 5 of 10 pins down.");
-    click(button(/^2nd attempt/i));
+    click(button(/^Second chance/i));
     throwFromLane();
     wait(0);
     click(button(/^Now, let's check with novel therapy/i));

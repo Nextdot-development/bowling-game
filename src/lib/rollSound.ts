@@ -62,7 +62,8 @@ export const ROLL_LOOP = [1.0, 1.6] as const;
 /** Seconds from release until the ball leaves the deck and drops into the pit. */
 export const PIT_SECONDS = ballArrivalSeconds(DECK_END_Z);
 
-export function buildSoundCues(pinsDown: number, totalPins: number, instant = false): SoundCue[] {
+/** `hitAt`: seconds after release when the first pin is knocked (rackReactions); by default when the ball reaches the head pin. */
+export function buildSoundCues(pinsDown: number, totalPins: number, instant = false, hitAt = IMPACT_SECONDS): SoundCue[] {
   const strikeGain = 0.55 + 0.45 * Math.max(0, Math.min(1, pinsDown / totalPins));
   // The ball is heard rolling the whole way, through the pins until it drops
   // into the pit. Past the set-down thud only the clean rolling part of the
@@ -74,5 +75,5 @@ export function buildSoundCues(pinsDown: number, totalPins: number, instant = fa
   // has faint clicks that could be heard as pins.
   if (pinsDown <= 0) return instant ? [] : [roll];
   if (instant) return [{ sound: "strike", at: 0.05, gain: strikeGain }];
-  return [roll, { sound: "strike", at: IMPACT_SECONDS, gain: strikeGain }];
+  return [roll, { sound: "strike", at: hitAt, gain: strikeGain }];
 }

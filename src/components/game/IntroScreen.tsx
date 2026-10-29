@@ -27,7 +27,12 @@ export function IntroScreen({ onStart, pinName }: IntroScreenProps) {
     opening.played = false;
     return null;
   });
-  const reduce = useReducedMotion();
+  // The reduced-motion setting only once the page is running: the server can't know it, so the
+  // first render matches the server's HTML (no hydration mismatch), then follows the setting.
+  const prefersReduced = useReducedMotion();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const reduce = mounted && prefersReduced;
   // The opening plays once the lane is on screen (with a fallback if it is slow to load).
   const [ready, setReady] = useState(false);
   const markReady = useCallback(() => setReady(true), []);

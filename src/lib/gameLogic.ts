@@ -113,6 +113,18 @@ export function secondThrowLane(first: LanePins, drug: DrugId): LanePins {
   ) as Record<PinNumber, LanePin>;
 }
 
+/**
+ * The pins on the lane while a throw rolls: on the second throw, what the first
+ * left (its fallen pins gone); on Frame 1's first throw the shaking pins stand
+ * still (they only shake on the second throw); otherwise the drug's outcome.
+ */
+export function rollingLane(drug: DrugId, frame: 1 | 2, firstThrowLane: LanePins | null): LanePins {
+  if (firstThrowLane) return secondThrowLane(firstThrowLane, drug);
+  const lane = rollLane(drug);
+  if (frame !== 1) return lane;
+  return Object.fromEntries(Object.entries(lane).map(([n, s]) => [n, s === "wobble" ? "up" : s])) as LanePins;
+}
+
 /** Pins knocked down in the frame so far (down now, or cleared by an earlier throw). */
 export function laneCleared(lane: LanePins): PinNumber[] {
   return PINS.filter((p) => lane[p.number] === "down" || lane[p.number] === "gone").map((p) => p.number);

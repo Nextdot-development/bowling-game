@@ -18,7 +18,7 @@ export const EXPECTED_NAMES: Readonly<Record<PinNumber, string>> = {
 
 /** First-throw results as supplied (the shaking pin counts as standing). */
 export const EXPECTED_RESULTS: Readonly<Record<DrugId, { down: number; standing: PinNumber[] }>> = {
-  amoxiclavAzithro: { down: 4, standing: [1, 3, 4, 5, 8, 10] },
+  amoxiclavAzithro: { down: 4, standing: [1, 3, 4, 5, 7, 8] },
   amoxiclavClarithro: { down: 5, standing: [3, 5, 6, 8, 10] },
   miqnaf: { down: 10, standing: [] },
 };

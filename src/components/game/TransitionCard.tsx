@@ -3,17 +3,22 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { useEffect, useRef } from "react";
-import { SCORE_OUT_OF, TRANSITION_COPY } from "@/data/gameData";
+import { PINS, SCORE_OUT_OF, TRANSITION_COPY } from "@/data/gameData";
+import { richToPlain } from "@/lib/gameLogic";
 import { emitGameSound } from "@/lib/uiSound";
+import type { PinNumber } from "@/types/game";
 
 interface TransitionCardProps {
   /** The configured Frame 1 score for the chosen therapy. */
   score: number | null;
+  /** Pins still up after Frame 1 (shaking pins included: they stayed up). */
+  standing: readonly PinNumber[];
   onContinue: () => void;
   className?: string;
 }
 
-export function TransitionCard({ score, onContinue, className = "" }: TransitionCardProps) {
+export function TransitionCard({ score, standing, onContinue, className = "" }: TransitionCardProps) {
+  const standingPins = PINS.filter((p) => standing.includes(p.number));
   const reduce = useReducedMotion();
   const button = useRef<HTMLButtonElement>(null);
 
@@ -56,6 +61,25 @@ export function TransitionCard({ score, onContinue, className = "" }: Transition
               {TRANSITION_COPY.body}
             </p>
           </div>
+
+          {/* The barriers the conventional therapy left standing, as on the first-throw pop-up. */}
+          {standingPins.length > 0 && (
+            <>
+              <h3 className="mt-5 flex w-full items-center gap-3 font-display text-base uppercase tracking-[0.16em] text-brand-gold before:h-[2px] before:flex-1 before:rounded-full before:bg-brand-gold/50 after:h-[2px] after:flex-1 after:rounded-full after:bg-brand-gold/50 short:mt-2 kiosk:mt-[clamp(1rem,2.4vh,1.5rem)] kiosk:text-[clamp(1.05rem,2vh,1.3rem)]">
+                Still standing · {standingPins.length} of {PINS.length}
+              </h3>
+              <ul aria-label="Still standing" className="mt-3 grid w-full gap-2 text-left sm:grid-cols-2 sm:gap-x-3 short:mt-1.5 kiosk:mt-[clamp(0.6rem,1.4vh,0.9rem)] kiosk:gap-y-[clamp(0.45rem,1vh,0.65rem)]">
+                {standingPins.map((p, i) => (
+                  <li key={p.number} className="barrier-tile" style={{ animationDelay: `${0.3 + i * 0.07}s` }}>
+                    <span className="barrier-pin" aria-hidden>
+                      {p.number}
+                    </span>
+                    <span className="barrier-name">{richToPlain(p.name)}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
 
           {/* What happens next: a fresh rack and the novel therapy. */}
           <h3 className="mt-5 flex w-full items-center gap-3 font-display text-base uppercase tracking-[0.16em] text-brand-gold before:h-[2px] before:flex-1 before:rounded-full before:bg-brand-gold/50 after:h-[2px] after:flex-1 after:rounded-full after:bg-brand-gold/50 short:mt-2 kiosk:mt-[clamp(1rem,2.4vh,1.5rem)] kiosk:text-[clamp(1.05rem,2vh,1.3rem)]">

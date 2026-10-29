@@ -32,8 +32,12 @@ interface SwipeToRollProps {
 
 /** Fraction of the stage height a full swipe covers. */
 const FULL_SWIPE = 0.32;
-/** Minimum upward travel (fraction of stage height) to count as a roll. */
-const MIN_SWIPE = 0.07;
+/**
+ * Minimum upward travel (fraction of stage height) to count as a roll. Kept
+ * low: large kiosk touch frames often report the touch only once the finger
+ * is already moving, so part of the push is never seen.
+ */
+const MIN_SWIPE = 0.05;
 /** A quick flick also counts, even if short (px per ms). */
 const FLICK_SPEED = 0.55;
 /** The swipe zone covers the lane below this fraction of the stage height. */
@@ -47,7 +51,12 @@ export function SwipeToRoll({ phase, hasBall, width, height, aimRef, onAimingCha
   const reduce = useReducedMotion();
   // Once the frame's ball is presented on the lane.
   const enabled = phase === "ready" && hasBall;
-  const gesture = useRef<{ id: number; x: number; y: number; samples: { y: number; t: number }[] } | null>(null);
+  /**
+   * The swipe in progress. `y` is the lowest point the finger has reached (it
+   * starts where the touch was first seen): the push is measured up from
+   * there, so a pull back first, or a touch reported late, makes no difference.
+   */
+  const gesture = useRef<{ id: number; x: number; y: number; lastX: number; lastY: number; samples: { y: number; t: number }[] } | null>(null);
   const [dragging, setDragging] = useState(false);
   const [armed, setArmed] = useState(false);
   /** Where the swipe is heading, -1 (left) to 1 (right), while dragging. */
@@ -113,19 +122,50 @@ export function SwipeToRoll({ phase, hasBall, width, height, aimRef, onAimingCha
     } catch {
       /* not supported */
     }
-    gesture.current = { id: e.pointerId, x: e.clientX, y: e.clientY, samples: [{ y: e.clientY, t: e.timeStamp }] };
+    gesture.current = { id: e.pointerId, x: e.clientX, y: e.clientY, lastX: e.clientX, lastY: e.clientY, samples: [{ y: e.clientY, t: e.timeStamp }] };
     aimRef.current = 0;
     setPower(0);
     setDragging(true);
     onAimingChange(true);
   };
 
+  /** Lets the ball go if the swipe so far is a throw: far enough up (or a quick flick), and more up than sideways. */
+  const release = (clientX: number, clientY: number, t: number): boolean => {
+    const g = gesture.current;
+    if (!g) return false;
+    const dy = g.y - clientY; // upward is positive
+    const sideways = clientX - g.x;
+    const first = g.samples[0]!;
+    const speed = (first.y - clientY) / Math.max(1, t - first.t);
+    const upward = dy > Math.abs(sideways) * 0.6;
+    const rolled = enabled && upward && (dy >= height * MIN_SWIPE || (speed >= FLICK_SPEED && dy >= 20));
+    if (rolled) {
+      aimRef.current = Math.max(aimRef.current, 0.15);
+      setShot({ power: Math.max(0.15, powerFor(g, clientY, t)), at: t });
+      // Straight up is 0; about 30° to either side is full left (-1) or right (1).
+      onRoll(Math.max(-1, Math.min(1, Math.atan2(sideways, Math.max(1, dy)) / 0.5)));
+    }
+    end(rolled);
+    return rolled;
+  };
+
   const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
     const g = gesture.current;
     if (!g || e.pointerId !== g.id) return;
+    g.lastX = e.clientX;
+    g.lastY = e.clientY;
+    // Pulled back (down the screen): the push is measured from the lowest point.
+    if (e.clientY > g.y) {
+      g.y = e.clientY;
+      g.x = e.clientX;
+      g.samples = [];
+    }
     g.samples.push({ y: e.clientY, t: e.timeStamp });
     if (g.samples.length > 8) g.samples.shift();
     const p = progressFor(e.clientY);
+    // Pushed all the way: the ball goes now, without waiting for the finger to lift
+    // (some large touch frames report the lift late, or not at all).
+    if (p >= 1 && release(e.clientX, e.clientY, e.timeStamp)) return;
     aimRef.current = p;
     setPower(powerFor(g, e.clientY, e.timeStamp));
     setSteer(Math.max(-1, Math.min(1, Math.atan2(e.clientX - g.x, Math.max(1, g.y - e.clientY)) / 0.5)));
@@ -136,24 +176,15 @@ export function SwipeToRoll({ phase, hasBall, width, height, aimRef, onAimingCha
   const onPointerUp = (e: PointerEvent<HTMLDivElement>) => {
     const g = gesture.current;
     if (!g || e.pointerId !== g.id) return;
-    const dy = g.y - e.clientY; // upward is positive
-    const sideways = e.clientX - g.x;
-    const dx = Math.abs(sideways);
-    const first = g.samples[0]!;
-    const speed = (first.y - e.clientY) / Math.max(1, e.timeStamp - first.t);
-    const upward = dy > dx * 0.6;
-    const rolled = enabled && upward && (dy >= height * MIN_SWIPE || (speed >= FLICK_SPEED && dy >= 20));
-    if (rolled) {
-      aimRef.current = Math.max(aimRef.current, 0.15);
-      setShot({ power: Math.max(0.15, powerFor(g, e.clientY, e.timeStamp)), at: e.timeStamp });
-      // Straight up is 0; about 30° to either side is full left (-1) or right (1).
-      onRoll(Math.max(-1, Math.min(1, Math.atan2(sideways, Math.max(1, dy)) / 0.5)));
-    }
-    end(rolled);
+    release(e.clientX, e.clientY, e.timeStamp);
   };
 
+  // A touch screen may cancel a fast swipe as it ends (taking it for a system
+  // flick or a scroll): a swipe that was already a throw still rolls the ball.
   const onPointerCancel = (e: PointerEvent<HTMLDivElement>) => {
-    if (gesture.current?.id === e.pointerId) end(false);
+    const g = gesture.current;
+    if (!g || g.id !== e.pointerId) return;
+    release(g.lastX, g.lastY, e.timeStamp);
   };
 
   const showHint = enabled && !dragging;

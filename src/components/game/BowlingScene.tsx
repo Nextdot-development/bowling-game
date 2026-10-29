@@ -139,14 +139,16 @@ function CameraRig({ hits, strike }: { hits: boolean; strike: boolean }) {
 
 /** Most pixels the scene renders (about 1080p plus a little): a 4K or scaled-up 42" panel gets no more, so the roll stays smooth. */
 const MAX_PIXELS = 2.6e6;
-/** Resolution steps tried, from full down, when the roll can't hold its frame rate. */
-const QUALITY = [1, 0.85, 0.7] as const;
+/** Resolution steps tried, from full down, when the scene can't hold its frame rate. */
+const QUALITY = [1, 0.85, 0.7, 0.55] as const;
 
 /**
  * Sets the render resolution: the screen's pixel ratio (at most 1.5), within the
- * pixel budget. If a roll still drops frames, it steps the resolution down for
- * the rest of the session (measured only while rolling: other phases render on
- * demand), applied once the roll is over, since resizing mid-roll is itself a hitch.
+ * pixel budget. If the scene drops frames, it steps the resolution down for the
+ * rest of the session. It is measured whenever the scene animates continuously:
+ * the opening camera sweep (so a slow laptop is at the right resolution before
+ * the first roll) and every roll. A step found during a roll is applied once
+ * the roll is over, since resizing mid-roll is itself a hitch.
  */
 function ResolutionGovernor({ phase }: { phase: GamePhase }) {
   const size = useThree((s) => s.size);
@@ -168,17 +170,23 @@ function ResolutionGovernor({ phase }: { phase: GamePhase }) {
 
   useFrame((_, delta) => {
     const s = sample.current;
-    if (timeline?.current.phase !== "rolling" || pending.current >= QUALITY.length - 1) {
+    const p = timeline?.current.phase;
+    const sweep = p === "intro" && !opening.played;
+    if ((p !== "rolling" && !sweep) || pending.current >= QUALITY.length - 1) {
       s.frames = 0;
       s.time = 0;
       return;
     }
-    // Skip the odd long frame (a tab switch); judge the steady rate over a second.
+    // Skip the odd long frame (a tab switch, the first frame); judge the steady rate over a second.
     if (delta > 0.25) return;
     s.frames += 1;
     s.time += delta;
     if (s.time >= 1) {
-      if (s.frames / s.time < 45) pending.current = Math.min(QUALITY.length - 1, pending.current + 1);
+      if (s.frames / s.time < 50) {
+        pending.current = Math.min(QUALITY.length - 1, pending.current + 1);
+        // Not mid-roll: take the lower resolution straight away.
+        if (p !== "rolling") setStep(pending.current);
+      }
       s.frames = 0;
       s.time = 0;
     }
@@ -256,7 +264,8 @@ function Lights() {
         position={[1.2, 5, 1.8]}
         intensity={1.05}
         castShadow
-        shadow-mapSize={[2048, 2048]}
+        // Soft shadows (blurred anyway): a 1024 map is plenty, at a quarter of the cost of 2048.
+        shadow-mapSize={[1024, 1024]}
         shadow-bias={-0.0004}
         shadow-camera-left={-1.8}
         shadow-camera-right={1.8}
@@ -299,7 +308,8 @@ export default function BowlingScene(props: BowlingSceneProps) {
   return (
     <SceneTimelineContext.Provider value={timeline}>
       <Canvas
-        shadows="soft"
+        // PCF shadow filtering: close to the soft look at a fraction of the cost per frame.
+        shadows="percentage"
         // Set by ResolutionGovernor: capped so the roll stays smooth on a 4K or scaled-up kiosk panel.
         dpr={1}
         frameloop={phase === "rolling" || phase === "transition" || aiming || (phase === "intro" && !opening.played) ? "always" : "demand"}

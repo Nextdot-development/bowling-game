@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { gameReducer, initialGameState } from "@/lib/gameReducer";
-import { laneDown, pinsDownCount, secondThrowLane, TOTAL_PINS } from "@/lib/gameLogic";
+import { laneDown, pinsDownCount, rollingLane, TOTAL_PINS } from "@/lib/gameLogic";
+import { firstKnockSeconds, throwPath } from "@/lib/rollAnimation";
 import { ROLL_TOTAL_MS, STRIKE_RESULT_MS } from "@/lib/timing";
 import { useGameAudio } from "@/hooks/useGameAudio";
 import type { DrugId, PinNumber } from "@/types/game";
@@ -43,11 +44,12 @@ export function useGameState(reducedMotion: boolean) {
     if (rollId === 0 || soundedRoll.current === rollId || !selectedDrug) return;
     if (phase !== "rolling" && !((phase === "result" || phase === "transition") && rollInstant)) return;
     soundedRoll.current = rollId;
-    // The second throw crashes only the pins it knocks down (the shaking pins only wobble).
-    const pinsDown =
-      state.frame === 1 && state.attempts === 2 && state.firstThrow ? laneDown(secondThrowLane(state.firstThrow.lane, selectedDrug)).length : pinsDownCount(selectedDrug);
-    void playRoll({ pinsDown, totalPins: TOTAL_PINS, instant: rollInstant });
-  }, [phase, rollId, rollInstant, selectedDrug, playRoll, state.frame, state.attempts, state.firstThrow]);
+    // The same pins and ball line the lane shows, so the crash is heard the moment the first pin is hit.
+    const lane = rollingLane(selectedDrug, state.frame, state.frame === 1 && state.attempts === 2 ? state.firstThrow?.lane ?? null : null);
+    const pinsDown = laneDown(lane).length;
+    const hitAt = firstKnockSeconds(lane, throwPath(state.lineSeed, selectedDrug, state.lineAim, lane), pinsDown === TOTAL_PINS);
+    void playRoll({ pinsDown, totalPins: TOTAL_PINS, instant: rollInstant, hitAt });
+  }, [phase, rollId, rollInstant, selectedDrug, playRoll, state.frame, state.attempts, state.firstThrow, state.lineSeed, state.lineAim]);
 
   const actions = useMemo(
     () => ({

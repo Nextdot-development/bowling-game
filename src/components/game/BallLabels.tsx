@@ -57,8 +57,10 @@ export function RackLabels({ balls, width, height, onSelect }: { balls: readonly
   return (
     <div className="pointer-events-none absolute inset-0 z-10" data-sound="select" aria-hidden>
       {spots.map(({ id, ball, r }) => {
-        // A round tap target over the ball itself (above the swipe area, which covers the lane's foot).
-        const hit = Math.max(44, r * 2.6);
+        // A round tap target over the ball itself (above the swipe area, which covers the lane's foot),
+        // never reaching over the next ball's (on a small phone the balls sit close together).
+        const nearest = Math.min(...spots.filter((s) => s.id !== id).map((s) => Math.hypot(s.ball.x - ball.x, s.ball.y - ball.y)));
+        const hit = Math.min(Math.max(44, r * 2.6), nearest);
         return (
           <Fragment key={id}>
             <span className="rack-ball-glow absolute rounded-full" style={{ left: ball.x - r * 1.15, top: ball.y - r * 1.15, width: r * 2.3, height: r * 2.3 }} />

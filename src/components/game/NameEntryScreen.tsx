@@ -61,16 +61,12 @@ export function NameEntryScreen({ onSubmit }: NameEntryScreenProps) {
         </div>
         {/* On the kiosk the card fills the screen and the keyboard takes the spare height. */}
         <div className="px-4 py-6 sm:px-10 sm:py-8 kiosk:mx-auto kiosk:flex kiosk:min-h-0 kiosk:w-full kiosk:max-w-[90rem] kiosk:flex-1 kiosk:flex-col kiosk:px-[3rem] kiosk:py-[clamp(1.25rem,3vh,2.25rem)]">
-        <p className="text-base text-white/75 sm:text-lg kiosk:text-[1.25rem]">
-          Your name is used only for the greeting in this game.
-        </p>
-
         <label htmlFor="doctor-name" className="sr-only">
           Your name
         </label>
         {/* The name field, with the "Dr." it will be greeted with. */}
         <div
-          className={`mt-5 flex items-center gap-3 rounded-2xl border-2 bg-white px-4 transition-colors focus-within:border-brand-gold focus-within:shadow-[0_0_0_4px_rgb(var(--brand-gold-rgb)/0.35)] kiosk:mt-[clamp(1rem,2.6vh,1.75rem)] kiosk:px-[1.25rem] ${
+          className={`flex items-center gap-3 rounded-2xl border-2 bg-white px-4 transition-colors focus-within:border-brand-gold focus-within:shadow-[0_0_0_4px_rgb(var(--brand-gold-rgb)/0.35)] kiosk:px-[1.25rem] ${
             error ? "border-brand-red" : "border-white/30"
           }`}
         >

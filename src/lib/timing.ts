@@ -1,5 +1,5 @@
 /** Release to the head pin: a long lane and an unhurried roll. */
-export const BALL_TRAVEL_MS = 4200;
+export const BALL_TRAVEL_MS = 5000;
 
 /** Time after impact for the knocked pins to finish falling and lie still (the last one settles by about 2.2 s). */
 export const PINS_DOWN_MS = 2300;
