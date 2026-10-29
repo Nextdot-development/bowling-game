@@ -1,14 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Lilita_One, Nunito } from "next/font/google";
+import localFont from "next/font/local";
 import { GAME_TITLE } from "@/data/gameData";
 import { BRAND, brandCssVariables } from "@/lib/brand";
 import { BRAND_ASSETS } from "@/lib/brandAssets";
 import "./fonts.css";
 import "./globals.css";
 
-/** Game fonts (self-hosted at build): a chunky rounded display face and a rounded, readable body face. */
-const display = Lilita_One({ weight: "400", subsets: ["latin"], variable: "--font-game-display", display: "swap" });
-const body = Nunito({ subsets: ["latin"], variable: "--font-game-body", display: "swap" });
+
+const display = localFont({ src: "./fonts/lilita-one-latin.woff2", weight: "400", variable: "--font-game-display", display: "swap" });
+const body = localFont({ src: "./fonts/nunito-latin.woff2", weight: "200 1000", variable: "--font-game-body", display: "swap" });
 
 export const metadata: Metadata = {
   title: GAME_TITLE,
