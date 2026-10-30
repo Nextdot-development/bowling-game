@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { gameReducer, initialGameState } from "@/lib/gameReducer";
 import { laneDown, pinsDownCount, rollingLane, TOTAL_PINS } from "@/lib/gameLogic";
+import { savePlayer } from "@/lib/playerLog";
 import { firstKnockSeconds, throwPath } from "@/lib/rollAnimation";
 import { ROLL_TOTAL_MS, STRIKE_RESULT_MS } from "@/lib/timing";
 import { useGameAudio } from "@/hooks/useGameAudio";
@@ -50,6 +51,12 @@ export function useGameState(reducedMotion: boolean) {
     const hitAt = firstKnockSeconds(lane, throwPath(state.lineSeed, selectedDrug, state.lineAim, lane), pinsDown === TOTAL_PINS);
     void playRoll({ pinsDown, totalPins: TOTAL_PINS, instant: rollInstant, hitAt });
   }, [phase, rollId, rollInstant, selectedDrug, playRoll, state.frame, state.attempts, state.firstThrow, state.lineSeed, state.lineAim]);
+
+  // Each game's doctor goes on the device's player list (IndexedDB), in the background: the game never waits for it.
+  const { playerName } = state;
+  useEffect(() => {
+    if (playerName) void savePlayer(playerName);
+  }, [playerName]);
 
   const actions = useMemo(
     () => ({

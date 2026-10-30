@@ -21,6 +21,7 @@ import { sessionStage } from "@/lib/gameReducer";
 import { validateOutcomeMatrix } from "@/lib/outcomeValidation";
 import type { LanePin, LanePins, Pin, SessionStage } from "@/types/game";
 import { Dialog } from "@/components/ui/Dialog";
+import { StaffPanel } from "./StaffPanel";
 import { AccessiblePinList } from "./AccessiblePinList";
 import { BallRack } from "./BallRack";
 import { ClosingScreen } from "./ClosingScreen";
@@ -301,6 +302,8 @@ export function GameShell({ force2D = false }: GameShellProps) {
 
       <PathogenInfoDialog pinNumber={state.openPin} onClose={game.closePin} />
 
+      {/* Staff only, at the secret link #players: the device's player list, as CSV. */}
+      <StaffPanel />
       <Dialog
         open={confirmReset}
         onClose={() => setConfirmReset(false)}
