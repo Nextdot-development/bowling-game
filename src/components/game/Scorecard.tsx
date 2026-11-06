@@ -8,8 +8,8 @@ import type { DrugId } from "@/types/game";
 import { GamePanel } from "./GamePanel";
 
 /** "Prescribing Information": the link, and its QR code (public/brand). */
-const MORE_URL = "https://qrco.de/bfXXNu";
-const QR_SRC = "/brand/nafithromycin-qr.svg";
+const MORE_URL = "https://qr.codes/zb5DqR";
+const QR_SRC = "/brand/nafithromycin-qr.png";
 
 interface ScorecardProps {
   open: boolean;

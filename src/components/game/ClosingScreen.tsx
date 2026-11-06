@@ -1,14 +1,15 @@
 "use client";
 
-import { ArrowLeft, BookOpen, RotateCcw } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { CLOSING_COPY, REFERENCES_COPY } from "@/data/gameData";
+import { CLOSING_COPY, LEAFLET_COPY, REFERENCES_COPY } from "@/data/gameData";
 import { GamePanel } from "./GamePanel";
+import { MiqnafLeaflet } from "./MiqnafLeaflet";
 
 interface ClosingScreenProps {
   /** The doctor's name (shown as text). */
   name: string;
-  /** Back to the welcome screen for the next doctor. */
+  /** Back to the welcome screen for the next doctor (from the leaflet). */
   onContinue: () => void;
 }
 
@@ -17,10 +18,11 @@ const BUTTON_SIZE =
 
 /**
  * The last screens: a personal thank-you in a pop-up over the lane (supplied
- * copy, draft pending approval), then, if asked for, the references page.
+ * copy, draft pending approval), then the MIQNAF® leaflet and a new game.
+ * The references page opens from the thank-you, if asked for.
  */
 export function ClosingScreen({ name, onContinue }: ClosingScreenProps) {
-  const [view, setView] = useState<"thanks" | "references">("thanks");
+  const [view, setView] = useState<"thanks" | "leaflet" | "references">("thanks");
   const button = useRef<HTMLButtonElement>(null);
 
   useEffect(() => button.current?.focus(), [view]);
@@ -32,6 +34,28 @@ export function ClosingScreen({ name, onContinue }: ClosingScreenProps) {
       <RotateCcw className="h-7 w-7" strokeWidth={3} aria-hidden /> {CLOSING_COPY.button}
     </button>
   );
+
+  if (view === "leaflet") {
+    return (
+      <GamePanel
+        key="leaflet"
+        titleId="leaflet-heading"
+        // The leaflet carries its own logo: the title is for screen readers only, so the leaflet gets the room.
+        title={<span className="sr-only">{LEAFLET_COPY.heading}</span>}
+        full
+        actions={
+          <>
+            <button type="button" onClick={() => setView("thanks")} className={`btn-ghost ${BUTTON_SIZE}`}>
+              <ArrowLeft className="h-7 w-7" strokeWidth={3} aria-hidden /> {LEAFLET_COPY.back}
+            </button>
+            {newGame}
+          </>
+        }
+      >
+        <MiqnafLeaflet />
+      </GamePanel>
+    );
+  }
 
   if (view === "references") {
     return (
@@ -80,7 +104,9 @@ export function ClosingScreen({ name, onContinue }: ClosingScreenProps) {
           <button type="button" onClick={() => setView("references")} className={`btn-ghost ${BUTTON_SIZE}`}>
             <BookOpen className="h-7 w-7" strokeWidth={3} aria-hidden /> {REFERENCES_COPY.open}
           </button>
-          {newGame}
+          <button ref={button} type="button" onClick={() => setView("leaflet")} className={`btn-primary ${BUTTON_SIZE}`}>
+            {LEAFLET_COPY.open} <ArrowRight className="h-7 w-7" strokeWidth={3} aria-hidden />
+          </button>
         </>
       }
     >

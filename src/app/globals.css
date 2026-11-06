@@ -789,3 +789,265 @@
     box-shadow: 0 0 0 3px rgb(var(--brand-gold-rgb)), inset 0 -5px 0 rgb(0 0 0 / 0.25);
   }
 }
+
+/* The MIQNAF® leaflet (last screen): the supplied artwork's colours, laid out
+   by its own width. Type scales with the leaflet (cqw) between readable limits. */
+@layer components {
+  .leaflet {
+    --lf-navy: #1d3a8a;
+    --lf-red: #a8191f;
+    --lf-ink: #1f2937;
+    container-type: inline-size;
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 1.25rem;
+    padding: clamp(1rem, 2.6cqw, 2.25rem);
+    text-align: left;
+    color: var(--lf-ink);
+    font-family: var(--font-body);
+    background:
+      radial-gradient(120% 60% at 100% 100%, rgb(37 99 235 / 0.16), transparent 60%),
+      linear-gradient(160deg, #fff7f5 0%, #fdf2f3 55%, #eaf3fb 100%);
+  }
+  /* The navy swoosh across the top corner, as on the artwork. */
+  .leaflet::before {
+    content: "";
+    position: absolute;
+    left: -8%;
+    top: -9cqw;
+    width: 46%;
+    height: 14cqw;
+    border-radius: 0 0 100% 0 / 0 0 100% 0;
+    background: linear-gradient(100deg, var(--lf-navy), #3b5bb5);
+    transform: rotate(-4deg);
+  }
+  .leaflet > * {
+    position: relative;
+  }
+
+  .leaflet-main {
+    display: grid;
+    gap: clamp(1rem, 2.4cqw, 2rem);
+  }
+  .leaflet-left {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(0.6rem, 1.1cqw, 1rem);
+  }
+
+  .leaflet-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .leaflet-hero-art {
+    width: min(100%, 22rem);
+    height: auto;
+    -webkit-mask-image: radial-gradient(closest-side, black 72%, transparent 100%);
+    mask-image: radial-gradient(closest-side, black 72%, transparent 100%);
+  }
+  .leaflet-hero-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.4rem, 1cqw, 0.9rem);
+    text-align: center;
+  }
+  .leaflet-headline {
+    font-family: var(--font-body);
+    font-weight: 800;
+    line-height: 1.12;
+    color: var(--lf-red);
+    font-size: clamp(1.35rem, 2.6cqw, 2.6rem);
+  }
+  .leaflet-headline span {
+    display: block;
+  }
+  .leaflet-logo {
+    width: min(100%, clamp(13rem, 30cqw, 24rem));
+    height: auto;
+  }
+
+  .leaflet-tagline {
+    text-align: center;
+  }
+  .leaflet-tagline span {
+    display: inline-block;
+    border-radius: 999px;
+    padding: 0.3em 1.3em;
+    font-style: italic;
+    font-weight: 800;
+    color: white;
+    font-size: clamp(1.15rem, 2.3cqw, 2.1rem);
+    background: linear-gradient(90deg, #e8463e, #f0905e);
+    box-shadow: 0 6px 16px -8px rgb(232 70 62 / 0.7);
+  }
+  .leaflet-intro {
+    text-align: center;
+    font-family: Georgia, "Times New Roman", serif;
+    font-style: italic;
+    line-height: 1.35;
+    font-size: clamp(0.95rem, 1.55cqw, 1.4rem);
+  }
+
+  .leaflet-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 0.25rem;
+  }
+  .leaflet-stats > li {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0 0.5rem;
+    text-align: center;
+  }
+  .leaflet-stats > li + li {
+    border-left: 2px solid rgb(168 25 31 / 0.6);
+  }
+  .leaflet-stat-head {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  .leaflet-stat-icon {
+    width: clamp(2.2rem, 4.2cqw, 3.8rem);
+    height: auto;
+    mix-blend-mode: multiply;
+  }
+  .leaflet-stat-value {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-weight: 800;
+    line-height: 0.95;
+    color: var(--lf-navy);
+    font-size: clamp(1.9rem, 4.2cqw, 3.8rem);
+  }
+  .leaflet-stat-unit {
+    font-size: 0.32em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .leaflet-stat-text {
+    font-weight: 600;
+    line-height: 1.25;
+    font-size: clamp(0.8rem, 1.25cqw, 1.15rem);
+  }
+
+  .leaflet-points {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: clamp(0.6rem, 1.4cqw, 1.2rem);
+  }
+  .leaflet-points > li {
+    display: flex;
+    align-items: center;
+  }
+  .leaflet-point-icon {
+    position: relative;
+    z-index: 1;
+    flex: none;
+    width: clamp(3.6rem, 6cqw, 5.4rem);
+    height: auto;
+    border-radius: 999px;
+    box-shadow: 0 0 0 3px white, 0 6px 14px -6px rgb(29 58 138 / 0.6);
+  }
+  .leaflet-point-text {
+    flex: 1;
+    margin-left: -1.6rem;
+    padding: clamp(0.65rem, 1.3cqw, 1.1rem) clamp(0.9rem, 1.8cqw, 1.6rem) clamp(0.65rem, 1.3cqw, 1.1rem) 2.4rem;
+    border-radius: 0 1.4rem 1.4rem 0;
+    color: white;
+    font-weight: 500;
+    line-height: 1.3;
+    font-size: clamp(0.95rem, 1.45cqw, 1.35rem);
+    background: linear-gradient(90deg, #8b5cf6, #5b8def 50%, #22d3e6);
+  }
+  .leaflet sup {
+    margin-left: 0.1em;
+    font-size: 0.6em;
+  }
+
+  /* The small print. */
+  .leaflet-foot {
+    display: grid;
+    gap: clamp(0.75rem, 1.6cqw, 1.25rem);
+    margin-top: clamp(0.9rem, 1.6cqw, 1.4rem);
+    padding-top: clamp(0.75rem, 1.2cqw, 1rem);
+    border-top: 1px solid rgb(31 41 55 / 0.15);
+    line-height: 1.3;
+    font-size: clamp(0.72rem, 0.82cqw, 0.85rem);
+    color: rgb(31 41 55 / 0.88);
+  }
+  .leaflet-refs ol {
+    list-style: decimal;
+    padding-left: 1.4em;
+  }
+  .leaflet-restriction {
+    margin-top: 0.4em;
+    font-weight: 600;
+  }
+  .leaflet-contact {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .leaflet-company {
+    width: clamp(9rem, 14cqw, 13rem);
+    height: auto;
+    mix-blend-mode: multiply;
+  }
+  .leaflet-pv {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+  .leaflet-qr {
+    flex: none;
+    width: clamp(5rem, 8cqw, 7.5rem);
+    height: auto;
+    image-rendering: pixelated;
+  }
+
+  /* Wider than a phone: the hero side by side. */
+  @container (min-width: 34rem) {
+    .leaflet-hero {
+      flex-direction: row;
+    }
+    .leaflet-hero-art {
+      width: 36%;
+    }
+    .leaflet-headline span {
+      white-space: nowrap;
+    }
+    .leaflet-stat-head {
+      flex-direction: row;
+      gap: 0.4rem;
+    }
+    .leaflet-stat-value {
+      align-items: flex-start;
+    }
+    .leaflet-hero-text {
+      flex: 1;
+    }
+  }
+
+  /* Landscape: hero and numbers left, the four points right, the small print in three columns. */
+  @container (min-width: 56rem) {
+    .leaflet-main {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+      align-items: center;
+    }
+    .leaflet-foot {
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.3fr) minmax(0, 0.6fr);
+    }
+  }
+}

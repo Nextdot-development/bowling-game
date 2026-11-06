@@ -267,7 +267,7 @@ describe("GameShell", () => {
     ]);
     // The QR code and its link, on their own row below the three points.
     expect(within(why).getByRole("img", { name: /QR code/ })).toBeInTheDocument();
-    expect(within(why).getByRole("link", { name: "qrco.de/bfXXNu" })).toBeInTheDocument();
+    expect(within(why).getByRole("link", { name: "qr.codes/zb5DqR" })).toBeInTheDocument();
 
     click(within(card).getByRole("button", { name: /^Continue/ }));
     expect(screen.getByRole("heading", { name: "Dear Dr. Asha Rao," })).toBeInTheDocument();
@@ -278,7 +278,12 @@ describe("GameShell", () => {
     expect(within(refs).getAllByRole("listitem")).toHaveLength(25);
     expect(refs).toHaveTextContent("MIQNAF Prescribing Information.");
     click(within(refs).getByRole("button", { name: /^Back/ }));
-    click(within(screen.getByRole("dialog", { name: "Dear Dr. Asha Rao," })).getByRole("button", { name: /^New Game/ }));
+    // Next: the MIQNAF® leaflet, then a new game.
+    click(within(screen.getByRole("dialog", { name: "Dear Dr. Asha Rao," })).getByRole("button", { name: /^Next/ }));
+    const leaflet = screen.getByRole("dialog", { name: "MIQNAF®" });
+    expect(within(leaflet).getByRole("img", { name: /Nafithromycin tablet 400 mg/ })).toBeInTheDocument();
+    expect(leaflet).toHaveTextContent("Bactericidal unlike other bacteriostatic macrolides");
+    click(within(leaflet).getByRole("button", { name: /^New Game/ }));
     expect(button(/start game/i)).toBeInTheDocument(); // back to the welcome screen
   });
 

@@ -16,6 +16,8 @@ interface GamePanelProps {
   overlay?: ReactNode;
   /** Panel width on the kiosk layout. */
   wide?: boolean;
+  /** As wide as the screen allows (a leaflet laid out across it). */
+  full?: boolean;
   /** Three gold stars over the title (a strike). */
   stars?: boolean;
   /** Shown above the title (e.g. the product logo). */
@@ -46,7 +48,7 @@ function Star({ className }: { className: string }) {
  * tilted gold title (stars above it for a strike), the content, and the
  * button at its foot. Brand navy and gold only.
  */
-export function GamePanel({ titleId, title, children, actions, overlay, wide = false, stars = false, above, titleStyle = "banner", rays = true }: GamePanelProps) {
+export function GamePanel({ titleId, title, children, actions, overlay, wide = false, full = false, stars = false, above, titleStyle = "banner", rays = true }: GamePanelProps) {
   const reduce = useReducedMotion();
   useEffect(() => emitGameSound("popup"), []);
   /** Content rises into place just after the panel lands. */
@@ -73,7 +75,7 @@ export function GamePanel({ titleId, title, children, actions, overlay, wide = f
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className={`game-panel relative flex max-h-[calc(100dvh-2rem)] w-full flex-col ${wide ? "max-w-4xl kiosk:max-w-[66rem]" : "max-w-2xl kiosk:max-w-[48rem]"}`}
+        className={`game-panel relative flex max-h-[calc(100dvh-2rem)] w-full flex-col ${full ? "max-w-[110rem]" : wide ? "max-w-4xl kiosk:max-w-[66rem]" : "max-w-2xl kiosk:max-w-[48rem]"}`}
         // Drops in from above and bounces as it lands.
         initial={reduce ? false : { scale: 0.75, opacity: 0, y: -80 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}

@@ -140,6 +140,14 @@ export const CLOSING_COPY = {
   button: "New Game",
 } as const;
 
+/** After the thank-you: the MIQNAF® leaflet, then a new game. */
+export const LEAFLET_COPY = {
+  heading: "MIQNAF®",
+  /** Opens the leaflet from the thank-you. */
+  open: "Next",
+  back: "Back",
+} as const;
+
 /** The last page: the references, as supplied (numbered in this order). */
 export const REFERENCES_COPY = {
   heading: "References",
